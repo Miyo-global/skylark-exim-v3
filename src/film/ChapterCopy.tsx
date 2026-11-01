@@ -1,14 +1,11 @@
-import type { ChapterDef } from '../config/chapters'
+import { COPY_RIGHT, type ChapterDef } from '../config/chapters'
 import { MarketList } from '../sections/MarketList'
 import { DocCards, LabelCard, OtherPath } from './Extras'
 import './film.css'
 
-/** Chapters whose copy sits in a right-hand column instead of bottom-left, for editorial rhythm (redesign §6). */
-const RIGHT = new Set(['o3', 'p2', 'process', 'port'])
-
 /** Captions are real HTML inside each chapter section (indexable, read in order); captions.ts shows one at a time. */
 export function ChapterCopy({ chapter }: { chapter: ChapterDef }) {
-  const place = RIGHT.has(chapter.id) ? ' caption--right' : ''
+  const place = COPY_RIGHT.has(chapter.id) ? ' caption--right' : ''
   return (
     <>
       {chapter.media.map((m, i) => (

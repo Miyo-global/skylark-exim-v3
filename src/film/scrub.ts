@@ -65,6 +65,8 @@ let over = -1
 let hidden = false
 let isLight = false
 let isSoft = false
+let isRight = false
+let zoomKey = ''
 let lastY = 0
 /** px moved on the last tick, so a follow-up seek can stay on fastSeek until the wheel slows */
 let travel = 0
@@ -334,12 +336,14 @@ function tick() {
       probe.target = sq.index(at) / 24
     }
   }
-  // a set coming up has its entry frame decoded already (its bytes are in memory), so the cut onto it draws at once
+  // a set coming up has its entry frame decoded already (its bytes are in memory), so the cut onto it draws at once:
+  // the decoders' look-ahead, and always the next two scenes, whichever chapter they are in
+  const ahead2 = [i + 1, i + 2].map(videoId).filter((id): id is string => id !== null && isSeq(id))
   if (scrolled || seqNow) {
-    for (const id of near) if (isSeq(id)) (prefetchSeq(id), id !== clip && pumpEntry(id))
+    for (const id of [...near, ...ahead2]) if (isSeq(id)) (prefetchSeq(id), id !== clip && pumpEntry(id))
     for (const id of behind) if (isSeq(id)) (prefetchSeq(id), seqFor(id)?.pump(0))
   }
-  for (const [id, sq] of seqs) if (id !== clip && !near.includes(id) && !behind.includes(id)) sq.release()
+  for (const [id, sq] of seqs) if (id !== clip && !near.includes(id) && !ahead2.includes(id) && !behind.includes(id)) sq.release()
   const on = drawn >= 0
   if (seqCanvas && on !== seqOn) seqCanvas.style.opacity = (seqOn = on) ? '1' : '0'
   if (seqCanvas && on) seqCanvas.dataset.frame = String(drawn)
@@ -358,9 +362,18 @@ function tick() {
   const m = seg.media
   if (m.kind === 'still' || m.kind === 'gradient') posters[i]!.style.transform = `scale(${1 + 0.04 * p})`
 
-  // cross-fade join: next segment's poster fades in over the last 3% of scroll (the last sea shot → globe: 15%).
+  // the clip is painted: its poster goes, with any cross-fade class it kept from the segment before, so the stage never
+  // shows a poster and a clip at once
+  const cover = posters[i]
+  if (cover && m.kind === 'video') {
+    const want = probe.shown ? '0' : '1'
+    if (cover.style.opacity !== want) cover.style.opacity = want
+    if (probe.shown) cover.classList.remove('is-over')
+  }
+
+  // cross-fade join: next segment's poster fades in over the last 1.5% of scroll (the last sea shot → globe: 15%).
   // A join that skips the next clip's head keeps the poster down: that poster is the frame the scroll no longer shows.
-  const fadeLen = headSkipped ? 0 : seg.join === 'crossfade' ? (nextSeg?.media.kind === 'globe' ? 0.15 : 0.03) : 0
+  const fadeLen = headSkipped ? 0 : seg.join === 'crossfade' ? (nextSeg?.media.kind === 'globe' ? 0.15 : 0.015) : 0
   const a = fadeLen ? Math.max(0, (p - (1 - fadeLen)) / fadeLen) : 0
   const o = a > 0 ? i + 1 : -1
   if (o !== over && over >= 0 && posters[over]) {
@@ -378,6 +391,18 @@ function tick() {
   if (soft !== isSoft) {
     isSoft = soft
     stage?.classList.toggle('is-soft', soft)
+  }
+  // a segment's desktop reframe (chapters.ts Media zoom), through two custom properties on the stage (stage.css)
+  const z = seg.media.kind === 'video' && !env.mobile ? seg.media.zoom : undefined
+  const zk = z ? `${z.scale} ${z.x}` : ''
+  if (zk !== zoomKey && stage) {
+    zoomKey = zk
+    stage.style.setProperty('--zoom', String(z?.scale ?? 1))
+    stage.style.setProperty('--zoom-x', `${(z?.x ?? 0.5) * 100}%`)
+  }
+  if (!!seg.right !== isRight) {
+    isRight = !!seg.right
+    stage?.classList.toggle('is-right', isRight)
   }
   if (o >= 0 && posters[o]) {
     posters[o]!.classList.add('is-over')

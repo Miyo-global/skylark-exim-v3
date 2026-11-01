@@ -8,6 +8,8 @@
 /* desktop frame sequences (#hd2): the canvas draws cover-fit itself, sized by its CSS box */
 .stage__seq { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; pointer-events: none; }
 .stage__layer.is-over { z-index: 2; }
+/* a segment's reframe (chapters.ts Media zoom, set by scrub.ts): clip, frame sequence and poster scale together */
+.stage__video, .stage__seq, img.stage__layer { transform: scale(var(--zoom, 1)); transform-origin: var(--zoom-x, 50%) 50%; }
 .stage__gradient {
   /* sea placeholder: deep open-sea blue with a faint horizon */
   background:
@@ -23,8 +25,16 @@
   background: var(--scrim), linear-gradient(90deg, rgba(7, 31, 38, 0.72) 0%, rgba(7, 31, 38, 0.35) 38%, rgba(7, 31, 38, 0) 62%);
 }
 .stage.is-light .stage__scrim { opacity: 0; }
-/* daylight chapters (the port): neutral, bottom-only shade under the caption, no deep-sea tint over the footage */
-.stage.is-soft .stage__scrim { background: linear-gradient(to top, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.3) 26%, rgba(0, 0, 0, 0) 48%); }
+/* daylight chapters (the port): neutral black, no deep-sea tint over the footage. Bottom shade under the caption, and
+   a side shade to 0.55 behind the body copy on whichever side the copy sits */
+.stage.is-soft .stage__scrim {
+  --side: 90deg;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.3) 26%, rgba(0, 0, 0, 0) 48%),
+    linear-gradient(var(--side), rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.3) 30%, rgba(0, 0, 0, 0) 55%);
+}
+.stage.is-soft.is-right .stage__scrim { --side: 270deg; }
+@media (max-width: 819px) { .stage.is-soft.is-right .stage__scrim { --side: 90deg; } }
 /* the world chapter's scroll spacer lets pointers through to the globe under it (its copy re-enables its own) */
 .chapter[data-chapter="world"] { pointer-events: none; }
 

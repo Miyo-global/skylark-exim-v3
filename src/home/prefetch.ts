@@ -28,8 +28,12 @@ const storyScripts = () =>
       const entry = html.match(/<script type="module"[^>]*src="([^"]+)"/)?.[1]
       if (!entry) return
       for (const [, href] of html.matchAll(/<link rel="modulepreload"[^>]*href="([^"]+)"/g)) hint('modulepreload', href)
-      const js = await fetch(entry).then((r) => r.text())
+      const boot = await fetch(entry).then((r) => r.text())
       hint('modulepreload', entry)
+      // the entry is a bootstrap (#lcp, engine/first-screen.ts): the app chunk it imports names the lazy story chunk
+      const app = boot.match(/assets\/story-app-[\w-]+\.js/)?.[0]
+      if (app) hint('modulepreload', `/${app}`)
+      const js = boot + (app ? await fetch(`/${app}`).then((r) => r.text()) : '')
       for (const [file] of js.matchAll(/assets\/Story-[\w-]+\.(?:js|css)/g)) {
         if (file.endsWith('.css')) hint('prefetch', `/${file}`, 'style')
         else hint('modulepreload', `/${file}`)
@@ -97,8 +101,13 @@ const STORY_LOOKAHEAD = 4
  * /story's warm cache then reads them from the HTTP cache. The other path and the port frame sequence wait until the
  * visitor actually opens them. Save-Data and 2g/3g skip it.
  */
+/** every story file warmStory fetches is in the HTTP cache: the homepage is warm. Tests (navigator.webdriver) and ?debug only. */
+const markWarm = () => {
+  if (navigator.webdriver || new URLSearchParams(location.search).has('debug')) (globalThis as { __homeWarm?: boolean }).__homeWarm = true
+}
+
 export function warmStory() {
-  if (env.saveData || env.slow) return () => {}
+  if (env.saveData || env.slow) return (markWarm(), () => {})
   const ctl = new AbortController()
   const go = async () => {
     await Promise.all([codecReady, avifReady])
@@ -110,6 +119,7 @@ export function warmStory() {
     await Promise.all(Array.from({ length: 2 }, async () => {
       while (urls.length && !ctl.signal.aborted) await one(urls.shift()!)
     }))
+    if (!ctl.signal.aborted) markWarm()
   }
   const start = () => ('requestIdleCallback' in window ? requestIdleCallback(() => void go(), { timeout: 3000 }) : setTimeout(go, 500))
   if (store.getState().revealed) start()

@@ -54,6 +54,8 @@ export function Loader({ mounted, gate }: { mounted: Promise<void>; gate: Gate }
     /** the page's content has mounted */
     const ready = () => {
       if (store.getState().ready) return
+      // /story's static opening caption (#lcp) gives way to the film's own, which `ready` shows in the same place
+      document.querySelectorAll('.caption--static').forEach((e) => e.remove())
       store.setState({ ready: true })
       html.dataset.ready = '1'
       // the page just grew by its lazy content: Lenis would clamp the first wheel to the old height

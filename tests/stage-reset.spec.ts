@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test'
 import { open } from './helpers'
 
-/** Stage layers (posters, stills, globe) a person could see. Videos sit above them and are not counted. */
+/**
+ * Pictures a person could see: stage layers (posters, stills, globe), the shown <video> and the frame-sequence canvas.
+ * A clip's poster goes once the clip paints, so a chapter shows exactly one of them.
+ */
 const visibleLayers = () =>
-  [...document.querySelectorAll<HTMLElement>('.stage__layer')].filter((el) => Number(getComputedStyle(el).opacity) > 0.01).length
+  [...document.querySelectorAll<HTMLElement>('.stage__layer, .stage video, .stage__seq')].filter((el) => Number(getComputedStyle(el).opacity) > 0.01).length
 
 test('exactly one stage layer per chapter after coming back from the business sections', async ({ browser }) => {
   const { ctx, page } = await open(browser, 'desktop')

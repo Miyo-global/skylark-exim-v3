@@ -4,7 +4,9 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # weight's retina runs scroll the whole story at 900 px/s on a GPU-less runner (tests/helpers.ts scrollThrough):
+    # ~6 min each since the helper scrolls to the bottom, where it used to stop once its wheel deltas added up
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

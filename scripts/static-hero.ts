@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import type { Plugin } from 'vite'
+import { COPY_RIGHT, chaptersFor } from '../src/config/chapters.ts'
 import { exportsLine, start } from '../src/config/content.ts'
 import { heroPoster } from '../src/config/hero.ts'
 import { versioned } from './clip-manifest.ts'
@@ -17,7 +18,7 @@ const css = (f: string) => readFileSync(new URL(`../src/${f}`, import.meta.url),
 export function staticHero(): Plugin {
   const lead = start.title.replace(/ world\.$/, '')
   // the fork links over to /story (no aria-current: no path is chosen here)
-  const html = () => `<div class="hero hero--static" id="hero-static"><div class="hero__copy">
+  const html = () => `<div class="hero hero--static" id="hero-static" data-first-screen><div class="hero__copy">
 <p class="hero__eyebrow mono">${esc(start.eyebrow)}</p>
 <h1 class="hero__title">${esc(lead)} <em>world</em>.</h1>
 <p class="hero__body">${esc(start.body)}</p>
@@ -42,6 +43,30 @@ export function staticHero(): Plugin {
     // no room above the copy even for the small mark (360×640, landscape phones): the inline script measures it once the
     // fonts are in and only drops the copy under the loader (z-index, no layout change), as before #207
     '.hero-under-loader #hero-static{z-index:var(--z-copy)}'
+  // #lcp /story: the opening caption (o1, or p1 for #pond) as static HTML, the same markup as src/film/ChapterCopy.tsx.
+  // It sits where the film's caption sits, under the intro, so the page looks as before; but it paints before any JS
+  // and is /story's LCP. The app's own caption takes its place, same size, once the page has mounted (Loader.tsx).
+  const caption = () =>
+    (['ocean', 'pond'] as const)
+      .map((p) => {
+        const ch = chaptersFor(p)[0]
+        const c = ch.captions[0]
+        const m = c.eyebrow?.match(/^(.*?)\s*·\s*(\d{2})$/)
+        const eyebrow = !c.eyebrow ? '' : `<p class="caption__eyebrow mono">${m ? `<span class="caption__num">${m[2]}</span>${esc(m[1])}` : esc(c.eyebrow)}</p>`
+        const place = `${COPY_RIGHT.has(ch.id) ? ' caption--right' : ''}${ch.theme === 'light' ? ' caption--light' : ''}`
+        return `<article class="caption caption--static${place}" data-path="${p}" data-first-screen aria-hidden="true">${eyebrow}<h2 class="caption__title display">${esc(c.title)}</h2>${c.body ? `<p class="caption__body">${esc(c.body)}</p>` : ''}</article>`
+      })
+      .join('') +
+    // the store picks the path the same way (engine/store.ts): #pond, else the ocean
+    `<script>document.querySelector('.caption--static[data-path="'+(location.hash==='#pond'?'ocean':'pond')+'"]').remove()</script>`
+  // held invisible until the fonts are in, like the hero copy (a fallback-font first paint would re-flow it: CLS)
+  // (line-height: the 0.98 lines plus the 0.06em each SplitText line gets, so the title is as tall as the film's)
+  // (bottom: chrome.css's phone rule arrives with the app's CSS and film.css's comes back with the lazy story chunk; the
+  // film's caption ends on film.css's, so the static one keeps it throughout: no 29 px jump, CLS 0)
+  const bottom = readFileSync(new URL('../src/film/film.css', import.meta.url), 'utf8').match(/bottom:\s*(clamp\([^;]+\));/)![1]
+  const captionCss =
+    css('film/film.css') +
+    `.fonts-in .caption--static{visibility:visible;opacity:1}.caption--static .caption__title{line-height:1.04}.caption.caption--static{bottom:${bottom}}`
   // the hero poster (LCP image, #hd): AVIF preloads with the hero <picture>'s own sources, so the browser picks the same
   // file for both; browsers without AVIF skip them (type) and load the WebP from the <picture>
   const preload = () =>
@@ -71,7 +96,9 @@ export function staticHero(): Plugin {
       handler: (src) =>
         src
           .replace('/*static-hero-css*/', css('styles/tokens.css') + base + css('ui/hero.css'))
+          .replace('/*static-caption-css*/', captionCss)
           .replace('<!--static-hero-->', html())
+          .replace('<!--static-caption-->', caption())
           .replace('<!--hero-preload-->', preload())
           .replace('</body>', `${fit}\n  </body>`),
     },

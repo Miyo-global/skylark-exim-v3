@@ -150,9 +150,14 @@ export function topTier(codec: Codec, size: (f: string) => number | null) {
  * every file in public/media. The hash goes on the URL (`?v=`), so /media/* is cached immutably and a re-encoded file is
  * still picked up. Rewritten on every build (only when it changed); committed, so typecheck runs without a build.
  */
+/** a frame of a frame sequence: <id>-f_1920_NNN.{avif,webp} */
+const FRAME = /-f_1920_\d+\.(avif|webp)$/
+
 export function manifestSource() {
   const files = readdirSync(media('')).filter((f) => !f.startsWith('.'))
   const v = new Map(files.map((f) => [f, hash(readFileSync(media(f)))]))
+  // one hash per set, over every frame's hash in both formats: any re-encoded frame gives the set a new URL
+  const setHash = (id: string) => hash(Buffer.from([...seqFrames(id), ...seqFrames(id, 'webp')].sort().map((f) => v.get(f)).join('')))
   const size = (f: string) => (v.has(f) ? readFileSync(media(f)).length : null)
   const top = Object.fromEntries(CODECS.map((c) => [c, topTier(c, size)]))
   const paths = PATHS.map((path) => {
@@ -199,14 +204,20 @@ ${paths.join('\n')}
 /** the budget solver's top desktop tier per codec (scripts/clip-manifest.ts topTier) */
 export const TOP: Record<Codec, 1920 | 2560> = { ${CODECS.map((c) => `${c}: ${top[c].top}`).join(', ')} }
 
-/** desktop frame sequences (chapters.ts SEQ_CLIPS, #hd2): frames per clip, and bytes of its 1920 set (AVIF, WebP) */
-export const SEQ: Record<string, { frames: number; avif: number; webp: number }> = {
-${SEQ_CLIPS.filter(isSeq).map((id) => `  '${id}': { frames: ${seqFrames(id).length}, avif: ${seqBytes(id)}, webp: ${seqFrames(id, 'webp').reduce((a, f) => a + fileSize(f), 0)} },`).join('\n')}
+/**
+ * desktop frame sequences (chapters.ts SEQ_CLIPS, #hd2): frames per clip, bytes of its 1920 set (AVIF, WebP), and one
+ * content hash for the whole set (segments.ts seqUrl puts it on every frame's URL)
+ */
+export const SEQ: Record<string, { frames: number; avif: number; webp: number; v: string }> = {
+${SEQ_CLIPS.filter(isSeq).map((id) => `  '${id}': { frames: ${seqFrames(id).length}, avif: ${seqBytes(id)}, webp: ${seqFrames(id, 'webp').reduce((a, f) => a + fileSize(f), 0)}, v: '${setHash(id)}' },`).join('\n')}
 }
 
-/** content hash of every file in public/media; mediaUrl (segments.ts) puts it on the URL */
+/**
+ * content hash of every file in public/media; mediaUrl (segments.ts) puts it on the URL. Frame-sequence frames are left
+ * out: each set has one hash in SEQ, which keeps ~900 entries out of the homepage's main chunk
+ */
 export const MEDIA_V: Record<string, string> = {
-${[...v].sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, h]) => `  '${f}': '${h}',`).join('\n')}
+${[...v].filter(([f]) => !FRAME.test(f)).sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, h]) => `  '${f}': '${h}',`).join('\n')}
 }
 `
 }

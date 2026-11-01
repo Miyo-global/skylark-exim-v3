@@ -38,7 +38,12 @@ export async function scrollThrough(page: Page, mobile: boolean, pxPerSec = 1200
   await page.mouse.move(700, 450)
   const dt = 50
   const dy = (pxPerSec * dt) / 1000
-  for (let y = 0; y < max; y += dy) {
+  // until the page is at the bottom, not until the wheel deltas add up to its height: Lenis scales each wheel delta
+  // (wheelMultiplier, engine/ticker.ts), so the same deltas would stop the run partway down. The height is re-read
+  // (lazy sections change it after load) every 5 notches, not every one: on a CI runner a busy main thread makes each
+  // read a ~60 ms round trip, a third of a step
+  const left = () => page.evaluate(() => document.documentElement.scrollHeight - innerHeight - scrollY)
+  for (let n = 0; n < 4000 && (n % 5 || (await left()) > 2); n++) {
     await page.mouse.wheel(0, dy)
     await page.waitForTimeout(dt)
   }

@@ -9,6 +9,8 @@
   bottom: clamp(56px, 11vh, 128px);
   z-index: var(--z-copy);
   width: min(52rem, calc(100vw - 2 * var(--gutter)));
+  /* a notch or rounded corner on the right never covers the end of a line */
+  padding-right: env(safe-area-inset-right, 0px);
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
@@ -17,12 +19,13 @@
 .caption--light::before { background: var(--brass-ink); }
 .caption__eyebrow { display: flex; align-items: baseline; gap: 0.75em; color: var(--brass); margin-bottom: 1.2rem; letter-spacing: 0.06em; }
 .caption__num { font-family: var(--f-display); font-size: 1.6em; line-height: 1; color: var(--ice); font-variant-numeric: lining-nums tabular-nums; }
-.caption__title { font-size: var(--fs-h1); max-width: 13ch; text-wrap: balance; }
+/* 13ch, never wider than the column: a SplitText line mask is the column's width and clips whatever runs past it */
+.caption__title { font-size: clamp(2.75rem, 2rem + 3.4vw, 6rem); max-width: min(13ch, 100%); text-wrap: balance; overflow-wrap: break-word; }
 /* right-hand column chapters: copy sits right, the scrim follows it */
 .caption--right { left: auto; right: var(--gutter); width: min(34rem, calc(100vw - 2 * var(--gutter))); }
 @media (max-width: 819px) { .caption--right { left: var(--gutter); right: auto; } }
 .caption__title .line { padding-bottom: 0.06em; }
-.caption__body { margin-top: 1.4rem; max-width: 36ch; font-size: var(--fs-lead); line-height: 1.45; color: rgba(246, 242, 234, 0.86); }
+.caption__body { margin-top: 1.4rem; max-width: 36ch; font-size: var(--fs-lead); line-height: 1.45; color: rgba(246, 242, 234, 0.86); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 0, 0, 0.4); }
 .caption__note { margin-top: 1.2rem; color: var(--steel); }
 /* end-of-path link (#219): the only clickable thing in a film caption */
 .caption__other { margin-top: 1.4rem; pointer-events: auto; }
@@ -36,7 +39,7 @@
 .caption__fields dd { flex: 1; margin: 0; }
 .caption--light { color: var(--ink); }
 .caption--light .caption__eyebrow { color: var(--brass-ink); }
-.caption--light .caption__body { color: var(--ink-2); }
+.caption--light .caption__body { color: var(--ink-2); text-shadow: none; }
 /* markets: copy on the left, vertically centred below the header, so the globe can centre on it (Globe.tsx measures it) */
 .caption--markets { top: 68px; bottom: 0; height: fit-content; margin: auto 0; width: min(36rem, 44vw); }
 /* phones: the globe takes the top of the screen, the copy stacks under it */

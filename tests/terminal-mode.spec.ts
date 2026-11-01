@@ -5,8 +5,8 @@ import { expect, test, type Page } from '@playwright/test'
  * Terminal mode (#264): once a page is warm, scrolling it fetches nothing and always has a picture to show.
  *
  * Per viewport, with no throttling and again on Fast 4G with a 4× slower CPU:
- * - the homepage hero's canvas sequence: on a step scroll the frame drawn is within one index of the target, on a fast
- *   fling it keeps painting, and it is never blank or stuck
+ * - the homepage hero's muted loop, once buffered and with the story warmed: on a step scroll it is painted and
+ *   moving at every stop, on a fast fling it keeps playing while on screen, never blank or stuck
  * - /story, warm: a step scroll and a fast fling always have a clip on screen (no frozen frame, no blank stage)
  * - no request to /media once the page is warm: the homepage, and /story on a phone; desktop /story streams its clips
  *   and the port film's frames by chapter (#hd2), so only those
@@ -21,33 +21,13 @@ const VIEWPORTS = {
 const FAST_4G = { offline: false, latency: 150, downloadThroughput: (9 * 1024 * 1024) / 8, uploadThroughput: (1.5 * 1024 * 1024) / 8 }
 /** one 60 Hz vsync, plus the jitter a run with no dropped frame still shows */
 const FRAME_P95_MS = 16.7 + 0.3
-/** the frame drawn may sit this far from the target index */
-const OFF_BY = 1
 
-interface Seq {
-  id: string
-  frames: number
-  progress: number
-  complete: boolean
-}
-const seqs = (page: Page) => page.evaluate(() => (globalThis as unknown as { __sequences?: Seq[] }).__sequences ?? [])
-
-/** A cheap hash of the canvas, to tell a frame that changed from one that is stuck, and either from a blank one. */
-const canvasHash = (page: Page) =>
+/** The hero loop: decoded and on screen (a picture), its time (moving or stuck), and whether any of it is in view. */
+const heroState = (page: Page) =>
   page.evaluate(() => {
-    const c = document.querySelector<HTMLCanvasElement>('.seq__canvas')
-    if (!c || !c.width) return { hash: 0, flat: true }
-    const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data
-    let h = 0
-    let min = 255
-    let max = 0
-    for (let i = 0; i < d.length; i += 4093) {
-      h = (h * 31 + d[i]) | 0
-      min = Math.min(min, d[i])
-      max = Math.max(max, d[i])
-    }
-    // a blank canvas is one flat colour
-    return { hash: h, flat: max - min < 4 }
+    const v = document.querySelector<HTMLVideoElement>('.home-hero video')!
+    const r = v.getBoundingClientRect()
+    return { painted: v.readyState >= 2 && v.videoWidth > 0, paused: v.paused, t: v.currentTime, visible: r.bottom > 0 && r.top < innerHeight }
   })
 
 const p95 = (a: number[]) => +[...a].sort((x, y) => x - y)[Math.max(0, Math.floor(a.length * 0.95) - 1)].toFixed(1)
@@ -90,46 +70,49 @@ for (const [name, v] of Object.entries(VIEWPORTS)) {
       let counting = false
       page.on('request', (r) => counting && /\/media\//.test(r.url()) && media.push(new URL(r.url()).pathname))
 
-      // ── the homepage hero sequence
+      // ── the homepage hero: the city view's muted loop (c8cdc94 replaced the canvas frame sequence with it)
       await page.goto('/')
       await page.waitForFunction(() => document.documentElement.dataset.ready === '1', null, { timeout: 60_000 })
-      await page.mouse.move(v.viewport.width / 2, v.viewport.height / 2)
-      await page.mouse.wheel(0, 20)
-      await expect.poll(async () => (await seqs(page))[0]?.complete ?? false, { timeout: 300_000 }).toBe(true)
-      const seq = (await seqs(page))[0]
-      report.heroSet = seq
+      // warm: the loop is buffered to its end, and every story file the homepage warms in the background is fetched
+      await page.waitForFunction(
+        () => {
+          const v = document.querySelector<HTMLVideoElement>('.home-hero video')
+          const b = v?.buffered
+          const whole = !!v && v.readyState >= 4 && !!b && b.length > 0 && b.end(b.length - 1) >= v.duration - 0.05
+          return whole && (globalThis as unknown as { __homeWarm?: boolean }).__homeWarm === true
+        },
+        null,
+        { timeout: 600_000, polling: 500 },
+      )
+      report.heroLoop = await page.evaluate(() => document.querySelector<HTMLVideoElement>('.home-hero video')!.duration)
       await page.evaluate(() => scrollTo(0, 0))
       await page.waitForTimeout(600)
 
-      // step scroll: the frame drawn stays with the target, the picture is never blank and never stuck
+      // step scroll through the hero's screen: the loop is painted and moving at every stop, never blank, never stuck
       counting = true
-      const off: number[] = []
-      let prev = await canvasHash(page)
-      for (const f of [0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1]) {
-        const want = await page.evaluate((f) => {
-          const s = document.querySelector<HTMLElement>('.home-hero')!
-          scrollTo(0, (s.offsetHeight - innerHeight) * f)
-          return f
-        }, f)
+      const stalled: string[] = []
+      for (const f of [0, 0.2, 0.4, 0.6, 0.8]) {
+        await page.evaluate((f) => scrollTo(0, document.querySelector<HTMLElement>('.home-hero')!.offsetHeight * f), f)
+        const was = await heroState(page)
         await page.waitForTimeout(500)
-        const drawn = +(await page.locator('.home-hero').getAttribute('data-frame'))!
-        off.push(Math.abs(drawn - Math.round(want * (seq.frames - 1))))
-        const now = await canvasHash(page)
-        expect.soft(now.flat, `${name} hero at ${f}: blank canvas`).toBe(false)
-        expect.soft(now.hash, `${name} hero at ${f}: the frame did not change`).not.toBe(prev.hash)
-        prev = now
+        const now = await heroState(page)
+        if (!now.painted) stalled.push(`${f}: blank`)
+        else if (now.t === was.t) stalled.push(`${f}: the frame did not change`)
       }
-      report.heroOffBy = off
+      report.heroStalled = stalled
 
-      // fast fling back to the top and down again: it keeps painting
+      // fast fling from the top: while any of the hero is on screen it keeps playing (off screen it pauses by design)
       await page.evaluate(() => scrollTo(0, 0))
       await page.waitForTimeout(400)
       const flung: boolean[] = []
+      // 1200 px notches on desktop (Lenis eases them, so the hero is sampled on its way out); a phone scrolls natively,
+      // and a 1200 px notch takes its one-screen, non-sticky hero off screen before the first sample: 45% of the screen
+      const notch = v.mobile ? Math.round(v.viewport.height * 0.45) : 1200
       for (let i = 0; i < 6; i++) {
-        await page.mouse.wheel(0, 1200)
+        await page.mouse.wheel(0, notch)
         await page.waitForTimeout(120)
-        const h = await canvasHash(page)
-        flung.push(!h.flat)
+        const h = await heroState(page)
+        if (h.visible) flung.push(h.painted && !h.paused)
       }
       report.heroFlingPainted = flung
       report.heroFrameP95 = p95(await timedScroll(page, v.mobile ? 18 : 24))
@@ -183,8 +166,9 @@ for (const [name, v] of Object.entries(VIEWPORTS)) {
       writeFileSync(`review/terminal-mode-${name}${throttled ? '-4g' : ''}.json`, JSON.stringify(report, null, 2))
       console.log(`\n${name}${throttled ? ' fast 4G + 4× CPU' : ''}`, JSON.stringify(report))
 
-      expect.soft(Math.max(...off), `${name} hero frame off by`).toBeLessThanOrEqual(OFF_BY)
-      expect.soft(flung.filter((p) => !p), `${name} hero blank frames during a fling`).toEqual([])
+      expect.soft(stalled, `${name} hero blank or stuck on a step scroll`).toEqual([])
+      expect.soft(flung.length, `${name} hero samples while on screen during a fling`).toBeGreaterThan(0)
+      expect.soft(flung.filter((p) => !p), `${name} hero blank or paused during a fling`).toEqual([])
       expect.soft(report.heroMediaDuringScroll, `${name} hero media requests once warm`).toEqual([])
       expect.soft(stuck, `${name} story stuck or blank`).toEqual([])
       // /story streams by chapter on every device: clips, the port film's frames (desktop), the stage posters and the

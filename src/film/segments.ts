@@ -1,4 +1,4 @@
-import type { ChapterDef, Media } from '../config/chapters'
+import { COPY_RIGHT, type ChapterDef, type Media } from '../config/chapters'
 import { heroPoster } from '../config/hero'
 import { env } from '../engine/env'
 import { SEQ, TOP, type Codec, type Tier } from './manifest'
@@ -13,6 +13,8 @@ export interface Segment {
   /** set on the last segment of a chapter */
   join?: ChapterDef['joinNext']
   scrim?: ChapterDef['scrim']
+  /** the chapter's copy sits in the right-hand column (the soft scrim shades that side) */
+  right?: boolean
 }
 
 /**
@@ -23,7 +25,7 @@ export function toSegments(chapters: ChapterDef[]): Segment[] {
   return chapters.flatMap((ch, chapter) =>
     segmentBounds(ch).map(([from, to], j, all) => {
       const last = j === all.length - 1
-      return { media: ch.media[j], chapter, from, to, join: last ? ch.joinNext : ('crossfade' as const), scrim: ch.scrim }
+      return { media: ch.media[j], chapter, from, to, join: last ? ch.joinNext : ('crossfade' as const), scrim: ch.scrim, right: COPY_RIGHT.has(ch.id) }
     }),
   )
 }
@@ -117,7 +119,7 @@ const stillUrl = (id: string, w: Tier) => (id.startsWith('ph-') ? img(`${id}_${s
  */
 export const isSeq = (id: string) => !env.mobile && W !== 960 && W !== 'm' && id in SEQ
 export const seqFrames = (id: string) => SEQ[id]?.frames ?? 0
-export const seqUrl = (id: string, i: number) => mediaUrl(`${id}-f_1920_${String(i).padStart(3, '0')}.${avif ? 'avif' : 'webp'}`)
+export const seqUrl = (id: string, i: number) => `/media/${id}-f_1920_${String(i).padStart(3, '0')}.${avif ? 'avif' : 'webp'}?v=${SEQ[id]?.v}`
 
 /** First-frame poster for a segment, or null for gradient/globe. `w` is the media tier (tests pass each one). */
 export function posterFor(m: Media, w: Tier = W): string | null {
