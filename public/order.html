@@ -36,6 +36,9 @@ a { color: inherit; }
 .brand svg { width: 28px; height: 28px; color: var(--brass); }
 .top nav { display: flex; flex-wrap: wrap; gap: 6px clamp(12px, 2vw, 28px); font-size: 0.9375rem; }
 .top nav a { text-decoration: none; opacity: 0.85; }
+/* where the links wrap under the mark anyway, they start on that row: a first paint with half the links parsed fit
+   them beside the mark, and the rest pushed them down (CLS) */
+@media (max-width: 667px) { .top nav { flex-basis: 100%; } }
 .top nav a:hover, .top nav a[aria-current] { opacity: 1; text-decoration: underline; text-underline-offset: 5px; }
 main { max-width: 1120px; margin: 0 auto; padding: clamp(40px, 6vw, 88px) var(--gutter) 96px; }
 .eyebrow { margin: 0 0 12px; color: var(--brass); font-size: 0.8125rem; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -123,6 +126,42 @@ footer { padding: 32px var(--gutter); border-top: 1px solid var(--hairline); col
   </nav>
 </header>
 
+<!-- above the form: product 1 is cloned from it inline, where it goes (below) -->
+<template id="item-tpl">
+  <div class="item">
+    <h3>Product <span class="n"></span></h3>
+    <button type="button" class="remove" aria-label="Remove this product">Remove</button>
+    <div class="grid">
+      <label><span class="req">Species</span>
+        <select data-k="species" required>
+          <option>Vannamei Shrimp</option><option>Black Tiger Shrimp</option><option>Wild-Caught Marine Fish &amp; Cephalopods</option>
+        </select>
+      </label>
+      <label><span class="req">Form</span>
+        <select data-k="form" required>
+          <option value="HOSO">HOSO (head-on shell-on)</option><option value="HLSO">HLSO (headless shell-on)</option>
+          <option value="PD">PD (peeled &amp; deveined)</option><option value="PDTO">PDTO (peeled, deveined, tail-on)</option>
+          <option>Whole Round</option><option>IQF / Block Frozen</option>
+        </select>
+      </label>
+      <label><span>Count / size grade</span><input data-k="grade" list="grades" maxlength="40" placeholder="e.g. 21/25, 31/40, 300-500 g" /></label>
+      <label><span>Glaze</span>
+        <select data-k="glaze"><option>0%</option><option>10%</option><option>15%</option><option>20%</option></select>
+      </label>
+      <label><span>Master carton</span>
+        <select data-k="packing"><option>10 x 1 kg</option><option>6 x 2 kg</option><option value="custom">Custom…</option></select>
+      </label>
+      <label class="custom" hidden><span>Custom packing</span><input data-k="packingCustom" maxlength="80" placeholder="e.g. 20 x 500 g printed box" /></label>
+      <div class="lbl"><span class="req">Quantity</span>
+        <div class="qty">
+          <input data-k="qty" type="number" min="0.1" step="0.1" required aria-label="Quantity" />
+          <select data-k="unit" aria-label="Unit"><option>MT</option><option>x 20' reefer FCL</option><option>x 40' reefer FCL</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <main id="main">
   <section id="form-view">
     <p class="eyebrow">Order</p>
@@ -133,6 +172,9 @@ footer { padding: 32px var(--gutter); border-top: 1px solid var(--hairline); col
       <fieldset>
         <legend>Products</legend>
         <div id="items"></div>
+        <!-- product 1 is in place before anything below it can paint: on a slow link the parser paints early, and an item
+             added by the script at the end of the body pushed Shipping and Your details down (CLS) -->
+        <script>(function(){var el=document.getElementById('item-tpl').content.firstElementChild.cloneNode(true);el.querySelector('.n').textContent='1';el.querySelector('.remove').hidden=true;document.getElementById('items').append(el)})()</script>
         <button type="button" id="add-item">+ Add another product</button>
       </fieldset>
 
@@ -195,40 +237,6 @@ footer { padding: 32px var(--gutter); border-top: 1px solid var(--hairline); col
 
 <footer>Skylark Exim · Sheela Nagar, Visakhapatnam, Andhra Pradesh · <a href="mailto:info@skylarkexim.com">info@skylarkexim.com</a> · +91-9000 604 070</footer>
 
-<template id="item-tpl">
-  <div class="item">
-    <h3>Product <span class="n"></span></h3>
-    <button type="button" class="remove" aria-label="Remove this product">Remove</button>
-    <div class="grid">
-      <label><span class="req">Species</span>
-        <select data-k="species" required>
-          <option>Vannamei Shrimp</option><option>Black Tiger Shrimp</option><option>Wild-Caught Marine Fish &amp; Cephalopods</option>
-        </select>
-      </label>
-      <label><span class="req">Form</span>
-        <select data-k="form" required>
-          <option value="HOSO">HOSO (head-on shell-on)</option><option value="HLSO">HLSO (headless shell-on)</option>
-          <option value="PD">PD (peeled &amp; deveined)</option><option value="PDTO">PDTO (peeled, deveined, tail-on)</option>
-          <option>Whole Round</option><option>IQF / Block Frozen</option>
-        </select>
-      </label>
-      <label><span>Count / size grade</span><input data-k="grade" list="grades" maxlength="40" placeholder="e.g. 21/25, 31/40, 300-500 g" /></label>
-      <label><span>Glaze</span>
-        <select data-k="glaze"><option>0%</option><option>10%</option><option>15%</option><option>20%</option></select>
-      </label>
-      <label><span>Master carton</span>
-        <select data-k="packing"><option>10 x 1 kg</option><option>6 x 2 kg</option><option value="custom">Custom…</option></select>
-      </label>
-      <label class="custom" hidden><span>Custom packing</span><input data-k="packingCustom" maxlength="80" placeholder="e.g. 20 x 500 g printed box" /></label>
-      <div class="lbl"><span class="req">Quantity</span>
-        <div class="qty">
-          <input data-k="qty" type="number" min="0.1" step="0.1" required aria-label="Quantity" />
-          <select data-k="unit" aria-label="Unit"><option>MT</option><option>x 20' reefer FCL</option><option>x 40' reefer FCL</option></select>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
 <datalist id="grades">
   <option value="U/10"></option><option value="16/20"></option><option value="21/25"></option><option value="26/30"></option><option value="31/40"></option>
   <option value="41/50"></option><option value="51/60"></option><option value="61/70"></option><option value="71/90"></option><option value="91/110"></option>
@@ -248,15 +256,19 @@ footer { padding: 32px var(--gutter); border-top: 1px solid var(--hairline); col
     $('.n', el).textContent = i + 1
     $('.remove', el).hidden = all.length === 1
   })
-  const addItem = () => {
-    const el = tpl.content.firstElementChild.cloneNode(true)
+  const wire = (el) => {
     $('[data-k=packing]', el).addEventListener('change', (e) => { $('.custom', el).hidden = e.target.value !== 'custom' })
     $('.remove', el).addEventListener('click', () => { el.remove(); renumber() })
+    return el
+  }
+  const addItem = () => {
+    const el = wire(tpl.content.firstElementChild.cloneNode(true))
     items.append(el)
     renumber()
     return el
   }
-  addItem()
+  // product 1 was cloned inline under #items
+  wire($('.item', items))
   $('#add-item').addEventListener('click', () => $('select', addItem()).focus())
 
   const refId = () => {

@@ -60,7 +60,8 @@ export function ScrubStage({ chapters }: { chapters: ChapterDef[] }) {
             src={undefined}
             alt=""
             decoding="async"
-            fetchPriority="low"
+            // the first frame is what the intro opens onto
+            fetchPriority={i === 0 ? 'high' : 'low'}
           />
         )
       })}

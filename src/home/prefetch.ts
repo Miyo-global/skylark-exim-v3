@@ -28,8 +28,12 @@ const storyScripts = () =>
       const entry = html.match(/<script type="module"[^>]*src="([^"]+)"/)?.[1]
       if (!entry) return
       for (const [, href] of html.matchAll(/<link rel="modulepreload"[^>]*href="([^"]+)"/g)) hint('modulepreload', href)
-      const js = await fetch(entry).then((r) => r.text())
+      const boot = await fetch(entry).then((r) => r.text())
       hint('modulepreload', entry)
+      // the entry is a bootstrap (#lcp, engine/first-screen.ts): the app chunk it imports names the lazy story chunk
+      const app = boot.match(/assets\/story-app-[\w-]+\.js/)?.[0]
+      if (app) hint('modulepreload', `/${app}`)
+      const js = boot + (app ? await fetch(`/${app}`).then((r) => r.text()) : '')
       for (const [file] of js.matchAll(/assets\/Story-[\w-]+\.(?:js|css)/g)) {
         if (file.endsWith('.css')) hint('prefetch', `/${file}`, 'style')
         else hint('modulepreload', `/${file}`)
