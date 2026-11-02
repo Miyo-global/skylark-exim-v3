@@ -72,9 +72,12 @@ export const COPY_RIGHT = new Set(['o3', 'p2', 'process', 'port'])
  * 2560 clip (FROM_SHIPPED=1 SHARPEN=1 SET_KB=5000 scripts/clip-frames.sh; several masters/ takes are not the footage on
  * the site). SSIM against the 2560 source beats the 1920 video on the frames checked (hf-catch 0.95 vs 0.91-0.93).
  * Left as video: hf-ship (4.6 MB on both paths puts the HEVC 2560 farmed path at 60.5 MB), hf-fish-freeze and hf-return
- * (4.6 / 4.5 MB, no room next to hf-catch on the wild-catch path), hf-fish-wash (waits for new footage).
+ * (4.6 / 4.5 MB, no room next to hf-catch on the wild-catch path).
+ * hf-fish-intake, hf-intake, hf-fish-wash, hf-store, hf-wash (#grey-slab): remade without the grey-slab artifacts
+ * (docs/review/grey-slab/PLAN.md), every frame of the new 72-frame master (SHARPEN=1 SET_KB=5000 scripts/clip-frames.sh).
  */
-export const SEQ_CLIPS = ['hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-catch', 'hf-peel', 'hf-lab']
+export const SEQ_CLIPS = ['hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-catch', 'hf-peel', 'hf-lab',
+  'hf-fish-intake', 'hf-intake', 'hf-fish-wash', 'hf-store', 'hf-wash']
 
 const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map((c, i) => ({ ...c, at: ranges[i] }))
 
