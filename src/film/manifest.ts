@@ -81,7 +81,7 @@ export const SEQ: Record<string, { frames: number; avif: number; webp: number; v
   'hf-lab': { frames: 72, avif: 2884387, webp: 5574782, v: '6b3aff80da' },
   'hf-fish-intake': { frames: 72, avif: 5964004, webp: 10598514, v: 'f76f9a3c47' },
   'hf-intake': { frames: 72, avif: 4756845, webp: 10191622, v: '992c682e38' },
-  'hf-fish-wash': { frames: 72, avif: 5216530, webp: 10844116, v: 'd1dfff4354' },
+  'hf-fish-wash': { frames: 72, avif: 5216530, webp: 10697712, v: 'f51a98d8ed' },
   'hf-store': { frames: 72, avif: 4486044, webp: 10729442, v: '6475e17d28' },
   'hf-wash': { frames: 72, avif: 6218964, webp: 10522376, v: '27f117c136' },
 }
