@@ -207,3 +207,24 @@ Each beat's last frame is the next beat's start frame. Beat 1 has three generate
 Seams: beat 2 last frame vs beat 3 start, SSIM 1.000 (identical). Beat 3 first frame vs that start, 0.91. The engine's 3 % in-chapter crossfade covers both.
 
 Balance after this and the o2 retake: 299.75, so **1,611 used** of the 1,624 guard. That leaves 13, not enough for another image or a pair of videos.
+
+## 2026-11-02: grey slab and rewind remake (fix/grey-slab-remake, docs/review/grey-slab/PLAN.md)
+
+Tarun approved up to 500 credits for shots hf-fish-intake, hf-intake, hf-fish-wash, hf-store and hf-wash, max 2 tries each. Start balance 563.36. Prices from `get_cost` preflights: `gpt_image_2_5` max 4k = 15, `minimax_h3` 2K 5 s = 10. Every start frame is an edit of the shot's own first frame (uploaded as a reference) so camera, layout and lighting match.
+
+| Shot | Kind | Job | Credits | Verdict | Notes |
+|---|---|---|---|---|---|
+| hf-fish-intake | image, try 1 | 51d0cdfa | 15 | REJECT | sent without the reference frame (my error): clean steel trays and ice, but a different camera and layout |
+| hf-intake | image, try 1 | d966811a | 15 | REJECT | same error: no reference frame attached, so it is not the shot's camera |
+| hf-fish-intake | image, try 2 (ref) | 351a226f | 15 | PASS | same camera, truck and workers; the grey slabs are now steel trays with rims, the ice is real crushed ice; no text, logos or boats |
+| hf-intake | image, try 2 (ref) | 924dcdf5 | 15 | PASS | the carried crate is a steel crate tilted to show shrimp on crushed ice; every trolley crate shows its contents |
+| hf-fish-wash | image, try 1 (ref) | e925b591 | 15 | PASS | spray rail on the left; grey boxes are steel grading crates on ice; the right-hand worker holds one washed mackerel over the crate |
+| hf-store | image, try 1 (ref) | e278ab11 | 15 | PASS | racks hold brown and frosted white cartons on pallets; the smeared panel is gone |
+| hf-wash | image, try 1 (ref) | a90a5b62 | 15 | PASS | the grey block column is stacked steel crates with shrimp on ice (the steel bollard in front was dropped) |
+| hf-fish-intake | video, try 2 | 3c9d7916 | 10 | PASS | slow dolly; the workers check gills and probe the tuna; trays and ice stay put; hands zoom-checked; the far door shows sea, sky and a pier line, no boats. Retimed 124 → 72 |
+| hf-intake | video, try 2 | 15f45485 | 10 | PASS | she walks toward the camera the whole time; shrimp and ice stay in the crate; the second worker walks away; gloves zoom-checked. Retimed 124 → 72 |
+| hf-fish-wash | video, try 1 | 839f1657 | 10 | PASS | one direction only: the right-hand worker takes a washed mackerel from the spray table and lays it in the grading crate (frames 76-124); it stays there and never goes back; the spray rail runs throughout. Retimed 124 → 72 |
+| hf-store | video, try 1 | 84a3db07 | 10 | PASS | slow dolly down the aisle; the racks hold cartons in every frame (slab score ≤ 0.7 %); everyone walks one way. Retimed 124 → 72 |
+| hf-wash | video, try 1 | e8870523 | 10 | PASS | slow move along the conveyor; the steel crate stacks stay solid; workers grade. Retimed 124 → 72 |
+
+**Total: 155 credits** (7 images, 5 videos; balance 563.36 → 408.36, checked). No still fallback needed: every shot passed within 2 tries. Masters (gitignored): `masters/<id>/master.mp4` (72 frames, 2560×1440, retimed evenly from the 124-frame take) and `masters/<id>/start.png` (the 4K start frame).
