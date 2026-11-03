@@ -33,9 +33,8 @@
 .nav > ul > li > .nav__link[aria-current='page'] { text-decoration-color: transparent; }
 .topbar.is-light::before { background: linear-gradient(to bottom, rgba(244, 239, 230, 0.92) 55%, rgba(244, 239, 230, 0)); }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
-.brand__mark { width: 28px; height: 28px; color: var(--brass); }
-.brand__mark svg { width: 100%; height: 100%; }
-.topbar.is-light .brand__mark { color: var(--brass-ink); }
+.brand__mark { width: 44px; height: 44px; }
+.brand__mark img { display: block; width: 100%; height: 100%; }
 .brand__word { font-size: 0.9375rem; font-weight: 500; letter-spacing: 0.12em; }
 .path-toggle {
   position: absolute; left: 50%; transform: translateX(-50%); margin: 0;
