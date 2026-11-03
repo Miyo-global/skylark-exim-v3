@@ -77,7 +77,7 @@ export const COPY_RIGHT = new Set(['o3', 'p2', 'process', 'port'])
  * (docs/review/grey-slab/PLAN.md), every frame of the new 72-frame master (SHARPEN=1 SET_KB=5000 scripts/clip-frames.sh).
  */
 export const SEQ_CLIPS = ['hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-catch', 'hf-peel', 'hf-lab',
-  'hf-fish-intake', 'hf-intake', 'hf-fish-wash', 'hf-store', 'hf-wash']
+  'hf-fish-intake', 'hf-intake', 'hf-fish-wash', 'hf-store', 'hf-wash', 'hf-unload-fish', 'hf-iqf', 'hf-harvest', 'hf-sort', 'hf-fish-cut']
 
 const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map((c, i) => ({ ...c, at: ranges[i] }))
 
