@@ -1,3 +1,4 @@
+import { Mark } from '../ui/Mark'
 import { CONTACT } from '../config/content'
 import * as m from 'motion/react-m'
 import { reveal, rise } from '../motion/tokens'
@@ -45,6 +46,7 @@ export function Contact() {
         </m.div>
       </div>
       <footer className="contact-band__foot mono">
+        <Mark size={56} />
         <span>© {new Date().getFullYear()} Skylark Exim</span>
         <span>Visakhapatnam, Andhra Pradesh</span>
       </footer>
