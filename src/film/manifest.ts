@@ -81,14 +81,14 @@ export const SEQ: Record<string, { frames: number; avif: number; webp: number; v
   'hf-lab': { frames: 72, avif: 2884387, webp: 5574782, v: '6b3aff80da' },
   'hf-fish-intake': { frames: 36, avif: 2187573, webp: 5339470, v: 'f84590ac06' },
   'hf-intake': { frames: 36, avif: 2622212, webp: 4731660, v: '7c64469a2f' },
-  'hf-fish-wash': { frames: 36, avif: 2820209, webp: 5333382, v: '293fee34c4' },
-  'hf-store': { frames: 36, avif: 2312724, webp: 5328280, v: 'dde64f1f06' },
-  'hf-wash': { frames: 36, avif: 2312485, webp: 5369546, v: 'b15394365d' },
+  'hf-fish-wash': { frames: 30, avif: 2358512, webp: 4442602, v: '18ac82add7' },
+  'hf-store': { frames: 30, avif: 2394519, webp: 4454220, v: 'b473207b5a' },
+  'hf-wash': { frames: 30, avif: 2655398, webp: 4448972, v: '56d8593819' },
   'hf-unload-fish': { frames: 36, avif: 2469040, webp: 4682144, v: '5a7a2c6be6' },
   'hf-iqf': { frames: 36, avif: 2463364, webp: 5277712, v: '570f5e52fa' },
-  'hf-harvest': { frames: 36, avif: 3438311, webp: 5222184, v: '7dd1bb5b67' },
-  'hf-sort': { frames: 36, avif: 3637623, webp: 5142126, v: '3616c5dc6d' },
-  'hf-fish-cut': { frames: 36, avif: 2429453, webp: 5354388, v: '9b4aa28e35' },
+  'hf-harvest': { frames: 24, avif: 2310211, webp: 3482568, v: '7ceda27b38' },
+  'hf-sort': { frames: 24, avif: 2419006, webp: 3464828, v: '9250e191f2' },
+  'hf-fish-cut': { frames: 30, avif: 2404444, webp: 4476494, v: '3f200a7883' },
 }
 
 /**
