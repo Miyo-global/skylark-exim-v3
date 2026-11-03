@@ -228,3 +228,25 @@ Tarun approved up to 500 credits for shots hf-fish-intake, hf-intake, hf-fish-wa
 | hf-wash | video, try 1 | e8870523 | 10 | PASS | slow move along the conveyor; the steel crate stacks stay solid; workers grade. Retimed 124 → 72 |
 
 **Total: 155 credits** (7 images, 5 videos; balance 563.36 → 408.36, checked). No still fallback needed: every shot passed within 2 tries. Masters (gitignored): `masters/<id>/master.mp4` (72 frames, 2560×1440, retimed evenly from the 124-frame take) and `masters/<id>/start.png` (the 4K start frame).
+
+The 2026-11-02 total above missed one job: a second `hf-fish-wash` video at 06:02 UTC (10 credits, MiniMax H3), which is the master on disk now. Balance after it: 398.36, read from `balance` and `transactions`. The job id was not recorded.
+
+## 2026-11-03: /story cleanup (fix/story-cleanup, docs/review/cleanup/AUDIT.md)
+
+Tarun approved up to 390 credits, max 2 tries per shot. Start balance 398.36, so the stop line is balance 8.36. Prices from `get_cost`: `gpt_image_2_5` max 4k = 15, `minimax_h3` 2K 5 s = 10. Every start frame is an edit of the shot's own first frame. The five masters from the 2 Nov remake passed a fresh frame check, so they are reused and cost nothing here.
+
+| Shot | Kind | Job | Credits | Running total | Verdict | Notes |
+|---|---|---|---|---|---|---|
+| hf-unload-fish | image, try 1 (ref) | a4206b24 | 15 | 15 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-iqf | image, try 1 (ref) | 7387e25d | 15 | 30 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-harvest | image, try 1 (ref) | 8b9f8f71 | 15 | 45 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-sort | image, try 1 (ref) | 4592523b | 15 | 60 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-fish-cut | image, try 1 (ref) | 058abe37 | 15 | 75 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-unload-fish | video, try 1 | 78aa38a1 | 10 | 85 | PASS | slow dolly; crates, ice and fish stay solid; the mat stays crisp under thin vapour; no people |
+| hf-iqf | video, try 1 | d1fe33fc | 10 | 95 | PASS (retimed 124 → 72) | shrimp stay on the belt and keep their shape; the worker stays still and leaves frame only through the camera move; nothing reaches back over the belt |
+| hf-harvest | video, try 1 | 7951f194 | 10 | 105 | PASS (frames 0-104 retimed to 72) | one continuous pull toward the camera; bank crates and ice boxes stay solid; the tail is cut because the left worker slides out of frame |
+| hf-sort | video, try 1 | e377e527 | 10 | 115 | REJECT | the push-in is too strong: heads are cropped from about frame 88 and the wading worker leaves the frame |
+| hf-fish-cut | video, try 1 | e3b0f3c8 | 10 | 125 | PASS (trimmed 60-108, 49 frames) | frames 112-120 return to the board and frames 24-48 run the blade close to the steadying glove, so both are cut. Kept: the hand takes the portion, lifts it and lays it on the ice, and it stays. 0 credits for the trim |
+| hf-sort | video, try 2 | f393f1a9 | 10 | 135 | PASS (frames 0-116 retimed to 72) | heads stay in frame; the bag is lowered and tipped onto the ice in one action and the shrimp stay there; the tail is cut because the wading worker reaches the frame edge |
+
+**Total for this cleanup: 135 credits** (5 images, 6 videos; balance 398.36 → 263.36, checked). Under the 390 cap. No still fallback needed.
