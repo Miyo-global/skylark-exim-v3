@@ -250,3 +250,30 @@ Tarun approved up to 390 credits, max 2 tries per shot. Start balance 398.36, so
 | hf-sort | video, try 2 | f393f1a9 | 10 | 135 | PASS (frames 0-116 retimed to 72) | heads stay in frame; the bag is lowered and tipped onto the ice in one action and the shrimp stay there; the tail is cut because the wading worker reaches the frame edge |
 
 **Total for this cleanup: 135 credits** (5 images, 6 videos; balance 398.36 → 263.36, checked). Under the 390 cap. No still fallback needed.
+
+## 2026-11-05: /story cleanup, second pass (fix/story-cleanup, docs/review/cleanup/AUDIT.md)
+
+Tarun approved up to 390 credits, max 2 tries per shot. Balance at the start is 263.36, below the approval, and 135 credits were already logged against a 390 approval on 2026-11-03. The stop line here is 255 new credits, which holds under either reading. Prices from `get_cost`: `gpt_image_2_5` max 4k = 15. Every start frame is an edit of the shot's own shipped frame.
+
+| Shot | Kind | Job | Credits | Running total | Verdict | Notes |
+|---|---|---|---|---|---|---|
+| hf-arrive | image, try 1 (ref) | 34ccadc0 | 15 | 15 | PASS | same camera and layout as shipped frame 0; crisp truck, gate and dock seals; clean wet-concrete reflections; no logos, text or extra vehicles |
+| hf-port-4 | image, try 1 (ref) | bcbef9f7 | 15 | 30 | PASS | same camera and layout as shipped frame 12; straight container edges and solid steel, the melted and translucent parts are gone; containers carry no text |
+| hf-arrive | video, try 1 | 79273dc6 | 10 | 40 | PASS | one slow forward roll toward the docks, never stopping or backing; driver stays at the wheel; the worker raises one arm and holds it; truck, gate and dock seals stay sharp |
+| hf-port-4 | video, try 1 | b0c656e1 | 10 | 50 | PASS | one slow hoist in one direction; container, spreader and hull stay solid and sharp at 2560 (frame 70 zoom-checked); no ghosting or morphing; truck and chassis stay put |
+| hf-port-1 | image, try 1 (ref + port-4 look) | d5121246 | 15 | 65 | REJECT | it took the lifted container from the look reference, so it is not this shot's layout |
+| hf-port-5 | image, try 1 (ref + port-4 look) | 947bac13 | 15 | 80 | PASS | same wide framing; three cranes, one ship, breakwater; crisp lattice and containers; no text |
+| hf-reverse | image, try 1 (ref + arrive look) | f81a1e8a | 15 | 95 | PASS | same three-quarter framing beside the docks; crisp truck, wheels and dock seals; clean reflections; no text or extra vehicles |
+| hf-port-1 | image, try 2 (ref only) | 5e17f220 | 15 | 110 | PASS | container down on the trailer with the spreader above it, as in the shipped shot; crisp edges; no text |
+| hf-port-5 | video, try 1 | f8b437f1 | 10 | 120 | PASS | very slow push; cranes, ship and breakwater stay solid and sharp; one ship; only the sea moves |
+| hf-reverse | video, try 1 | e4640dad | 10 | 130 | REJECT | sharp, but the truck backs away to the left and ends side-on, never into a bay |
+| hf-port-1 | video, try 1 | 062c7d2c | 10 | 140 | PASS | one slow push; the spreader comes down in one direction and stops just above the container; everything stays solid and sharp |
+| hf-port-2 | image, try 1 (port-1 last frame) | 55b2ab84 | 15 | 155 | PASS | same scene as port-1's end, spreader just above the box; crisp edges; no text |
+| hf-port-2 | video, try 1 | e6a131ce | 10 | 165 | PASS | slow push; the spreader settles on the box in one downward move and stays; everything stays sharp and solid |
+| hf-reverse | end keyframe, image (shipped last frame) | b722ea4a | 15 | 180 | PASS | truck square in the middle bay, worker's palm raised; crisp; no text |
+| hf-reverse | video, try 2 (start + end) | c52ed3e6 | 0 | 180 | FAILED | the job failed with no output and no charge (balance 83.36 confirms 180 spent), so it is resubmitted as the same try |
+| hf-reverse | video, try 2 resubmitted | e7487dcc | 0 | 180 | FAILED | failed again with no output and no charge. Two tries used: FALLBACK to the clean end keyframe (b722ea4a) with a subtle forward push-in, `scripts/still-push.py masters/hf-reverse/end.png masters/hf-reverse/master.mp4 0.6 0.42 1.06`. 0 credits |
+| hf-port-3 | image, try 1 (port-2 last frame) | afc690c8 | 15 | 195 | PASS | same scene as port-2's end, spreader seated on the box; crisp edges; no text |
+| hf-port-3 | video, try 1 | 73419515 | 10 | 205 | PASS | the corner locks hold and the box rises straight up off the trailer in one move, never back down; the chassis is revealed; everything stays sharp and solid |
+
+**Total for this pass: 205 credits** (9 images at 15, 7 charged videos at 10; balance 263.36 → 58.36, checked). Under the 255 stop line and the 390 approval. Two failed hf-reverse jobs were not charged. One still fallback: hf-reverse. Masters (gitignored): `masters/<id>/master.mp4` (72 frames, 2560×1440, frames picked evenly from the 124-frame take, no blending) and `masters/<id>/start.png` (the 4K start frame).
