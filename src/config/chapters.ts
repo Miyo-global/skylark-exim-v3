@@ -51,33 +51,26 @@ export const CROP_X: Record<string, number> = {
   'hero-loop': 0.5, opening: 0.5,
   'hf-depart': 0.68, 'hf-catch': 0.55, 'hf-ice': 0.45, 'hf-return': 0.55,
   'hf-ponds': 0.5, 'hf-sample': 0.42, 'hf-harvest': 0.45, 'hf-sort': 0.5,
-  'hf-arrive': 0.45, 'hf-reverse': 0.55, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
+  'hf-arrive': 0.42, 'hf-reverse': 0.62, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
   'hf-wash': 0.45, 'hf-peel': 0.72, 'hf-fish-wash': 0.6, 'hf-fish-cut': 0.4,
   'hf-lab': 0.4, 'hf-iqf': 0.4, 'hf-pack': 0.45, 'hf-store': 0.5, 'hf-fish-freeze': 0.725,
   'hf-ship': 0.5, 'hf-sail': 0.57,
-  // the #258 port film, one camera move cut in five: one crop for all five, so the phone joins line up too
-  'hf-port-1': 0.45, 'hf-port-2': 0.45, 'hf-port-3': 0.45, 'hf-port-4': 0.45, 'hf-port-5': 0.45,
+  'hf-port-1': 0.42, 'hf-port-2': 0.35, 'hf-port-3': 0.3, 'hf-port-4': 0.45, 'hf-port-5': 0.5,
 }
 
 /** Chapters whose copy sits in a right-hand column instead of bottom-left, for editorial rhythm (redesign §6). */
 export const COPY_RIGHT = new Set(['o3', 'p2', 'process', 'port'])
 
 /**
- * Clips a desktop plays as a frame sequence on the stage canvas instead of a <video> (#hd2; src/film/sequence.ts, the
- * Terminal Industries pattern): the port film's fast camera moves macroblocked and smeared in video at any byte rate a
- * path can afford. Every master frame as an AVIF still (scripts/clip-frames.sh), so each keeps its frame count and
- * timing. Phones keep the video: 289 phone frames would take most of the 12 MB phone path.
- * hf-catch, hf-peel and hf-lab (#story-seq): the fastest-moving scenes whose 1920 set fits 5 MB, each path's 60 MB
- * desktop budget and the 2560 tier for AV1 and HEVC (scripts/clip-manifest.ts topTier). Every frame of the shipped
- * 2560 clip (FROM_SHIPPED=1 SHARPEN=1 SET_KB=5000 scripts/clip-frames.sh; several masters/ takes are not the footage on
- * the site). SSIM against the 2560 source beats the 1920 video on the frames checked (hf-catch 0.95 vs 0.91-0.93).
- * Left as video: hf-ship (4.6 MB on both paths puts the HEVC 2560 farmed path at 60.5 MB), hf-fish-freeze and hf-return
- * (4.6 / 4.5 MB, no room next to hf-catch on the wild-catch path).
- * hf-fish-intake, hf-intake, hf-fish-wash, hf-store, hf-wash (#grey-slab): remade without the grey-slab artifacts
- * (docs/review/grey-slab/PLAN.md), every frame of the new 72-frame master (SHARPEN=1 SET_KB=5000 scripts/clip-frames.sh).
+ * Clips a desktop plays as a frame sequence on the stage canvas instead of a <video> (src/film/sequence.ts, the Terminal
+ * Industries pattern): every story clip, so a scroll never waits for a video seek and a fast move never macroblocks.
+ * Each set is evenly spaced master frames as AVIF stills, sized to its share of the 60 MB path (scripts/clip-frames.sh).
+ * Phones keep the video (docs/review/cleanup/AUDIT.md holds the measurement).
  */
-export const SEQ_CLIPS = ['hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-catch', 'hf-peel', 'hf-lab',
-  'hf-fish-intake', 'hf-intake', 'hf-fish-wash', 'hf-store', 'hf-wash', 'hf-unload-fish', 'hf-iqf', 'hf-harvest', 'hf-sort', 'hf-fish-cut']
+export const SEQ_CLIPS = ['hf-depart', 'hf-catch', 'hf-ice', 'hf-return', 'hf-ponds', 'hf-sample', 'hf-harvest', 'hf-sort',
+  'hf-arrive', 'hf-reverse', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
+  'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
+  'hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-ship', 'hf-sail']
 
 const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map((c, i) => ({ ...c, at: ranges[i] }))
 
@@ -131,7 +124,7 @@ const PLANT_POND: ChapterDef[] = [
     id: 'intake', path: 'pond', label: 'Intake', vh: 360, joinNext: 'crossfade', scrim: 'soft',
     media: [
       { kind: 'video', id: 'hf-arrive', alt: 'At dawn a white refrigerated truck drives in through the plant gate, its driver at the wheel and the cooling unit misting, and turns toward the loading docks.' },
-      { kind: 'video', id: 'hf-reverse', alt: 'The truck reverses into the insulated dock bay, reverse lights on, as a worker in a hi-vis vest guides it with hand signals and the driver watches the side mirror.' },
+      { kind: 'video', id: 'hf-reverse', alt: 'The truck stands backed into the insulated dock bay, its rear lights on, as a worker in a hi-vis vest guides it with a raised palm and the driver sits at the wheel.' },
       { kind: 'video', id: 'hf-unload-shrimp', alt: 'At the dock, two workers in white coats, hairnets and gloves lift a steel crate of seafood on ice out of the open truck, stacked with steel crates, onto a steel trolley.' },
       { kind: 'video', id: 'hf-intake', alt: 'Inside the receiving bay, a masked worker in a white coat carries a steel crate of shrimp on ice toward the steel trolleys beside the truck, while a second worker walks back to the dock door.' },
     ],
@@ -171,7 +164,7 @@ const PLANT_OCEAN: ChapterDef[] = [
     id: 'intake', path: 'ocean', label: 'Intake', vh: 480, joinNext: 'crossfade', scrim: 'soft',
     media: [
       { kind: 'video', id: 'hf-arrive', alt: 'At dawn a white refrigerated truck drives in through the plant gate, its driver at the wheel and the cooling unit misting, and turns toward the loading docks.' },
-      { kind: 'video', id: 'hf-reverse', alt: 'The truck reverses into the insulated dock bay, reverse lights on, as a worker in a hi-vis vest guides it with hand signals and the driver watches the side mirror.' },
+      { kind: 'video', id: 'hf-reverse', alt: 'The truck stands backed into the insulated dock bay, its rear lights on, as a worker in a hi-vis vest guides it with a raised palm and the driver sits at the wheel.' },
       { kind: 'video', id: 'hf-unload-fish', alt: 'A refrigerated truck stands backed into the dock seal with its rear doors open; cold vapour drifts out past three steel bins of whole fish on ice, with empty steel trolleys waiting on either side.' },
       { kind: 'video', id: 'hf-unload-crew', alt: 'Two workers in white coats, hairnets and gloves lift a steel crate of whole fish on ice out of the open truck together and set it on a steel trolley at the dock.' },
       { kind: 'video', id: 'hf-fish-intake', alt: 'At the receiving bay, steel trays of whole tuna, seer fish and Indian mackerel on ice; one worker opens a tuna\'s gill cover to check the gills while another inspects a second tuna.' },
@@ -212,17 +205,13 @@ const ENDING: ChapterDef[] = [
   {
     id: 'port', path: 'shared', label: 'The port', vh: 560, joinNext: 'crossfade', scrim: 'soft',
     media: [
-      // #258: one continuous camera move, cut into five segments that share their boundary frames.
-      // After the spreader meets the box the camera keeps pushing, and the empty chassis on the right leaves the frame.
-      // Hold while that chassis is still in the picture. The lift then starts with the container already off the truck,
-      // so this join cuts past the shared boundary frame. hf-port-3 stops on frame 31 of 60 (until 0.53), the last
-      // with the chassis whole in a 1440×900 crop, on 91vh of scroll: the least that keeps both ≥ 90vh a segment
-      // (story-stuck.spec.ts) and ≥ 0.15 s per 100 px (scene-scrub.spec.ts). hf-port-5 takes the rest.
+      // Five shots of one lift, each a slow forward push. 1 → 2 → 3 run on from each other's last frame; 4 is the box in the
+      // air from a new angle, 5 the port from above.
       { kind: 'video', id: 'hf-port-1', alt: 'On the quay beside the moored container ship, the crane\'s yellow spreader hangs over a white refrigerated container on its red truck; the camera eases in.' },
-      { kind: 'video', id: 'hf-port-2', alt: 'The camera keeps easing in on the truck parked under the ship-to-shore crane, its spreader above the container.' },
-      { kind: 'video', id: 'hf-port-3', until: 0.53, span: 0.162, alt: 'The crane\'s yellow spreader comes down on its cables onto the white container and locks onto it.' },
-      { kind: 'video', id: 'hf-port-4', from: 0.24, alt: 'The crane lifts the container off the truck, carries it out over the ship and sets it down on the stack on deck.' },
-      { kind: 'video', id: 'hf-port-5', alt: 'The camera pulls back and rises: a row of ship-to-shore cranes, the loaded container ship at the quay, and open sea beyond the breakwater.' },
+      { kind: 'video', id: 'hf-port-2', alt: 'The camera keeps easing in as the spreader settles onto the top corners of the white container on the truck.' },
+      { kind: 'video', id: 'hf-port-3', alt: 'The crane\'s yellow spreader locks onto the white container and starts to lift it off the trailer.' },
+      { kind: 'video', id: 'hf-port-4', alt: 'The crane hoists the white container up off the truck\'s trailer beside the ship.' },
+      { kind: 'video', id: 'hf-port-5', alt: 'From above: a row of ship-to-shore cranes, the loaded container ship at the quay, and open sea beyond the breakwater.' },
     ],
     captions: caps('port', [[0.03, 0.92]]),
   },
