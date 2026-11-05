@@ -47,7 +47,7 @@ export function prefetchStory(path: Path) {
   const clip = firstClip(path)
   if (!clip) return
   hint('prefetch', posterUrl(clip.id), 'image')
-  hint('prefetch', clipUrl(clip.id), 'video')
+  if (!isSeq(clip.id)) hint('prefetch', clipUrl(clip.id), 'video')
 }
 
 /** Hover or keyboard focus on any story link (nav, hero fork, story cards) warms /story; nothing loads before that. */
