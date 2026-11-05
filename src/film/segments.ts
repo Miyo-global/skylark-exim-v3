@@ -19,7 +19,7 @@ export interface Segment {
 
 /**
  * A chapter's scroll length is split evenly across its media, unless a still or a video sets its `span`.
- * Segments inside a chapter cross-fade (separate Higgsfield shots never share a boundary frame); the last one uses the chapter's join.
+ * Segments inside a chapter cut straight to each other (scrub.ts); the last one uses the chapter's join.
  */
 export function toSegments(chapters: ChapterDef[]): Segment[] {
   return chapters.flatMap((ch, chapter) =>
