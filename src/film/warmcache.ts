@@ -15,9 +15,8 @@ import { W, avifReady, clipUrl, codec, codecReady, isSeq, served } from './segme
  * path, at the page's own tier, in one codec (it waits for segments.ts to settle the codec). Save-Data and 2g/3g skip
  * it: the scrub's distance prefetch (scrub.ts) streams those.
  *
- * Story chapters stay video. docs/SEQUENCE_VS_VIDEO.md measured a full-path AVIF sequence at about 10× the AV1 clips,
- * past the path budgets. The port film is the scroll-scrubbed canvas sequence (sequence.ts): coarse first, bounded
- * decoded LRU, one shared rAF. The homepage hero stays a looping MP4.
+ * Desktop plays every story clip as a scroll-scrubbed canvas sequence (sequence.ts): coarse first, bounded decoded LRU,
+ * one shared rAF. Phones keep the video. The homepage hero stays a looping MP4.
  */
 /** clips fetched at once (Terminal's concurrency): 6 desktop, 3 phone */
 const PARALLEL = env.mobile ? 3 : 6
@@ -36,6 +35,12 @@ let opening = false
 /** bytes of the opening clip, received / declared. The intro's percentage is this, not the whole path. */
 let openingBytes = { have: 0, total: 1 }
 const OPEN_TRIES = 3
+/** a desktop opening frame set: the share of it the intro waits for (all of it: the first chapter never waits on the network), and how long at most (ms) */
+const OPEN_SHARE = 1
+const OPEN_WAIT = 8000
+/** ms without a new frame after which a frame set is passed over */
+const STALL = 10_000
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 /** the run's images, decoded / asked for; each counts as IMG bytes */
 let imgs = { done: 0, total: 0 }
 const IMG = 150e3
@@ -145,8 +150,21 @@ async function run(p: Path) {
     storyReady.then(() => decode([...document.querySelectorAll<HTMLImageElement>('#main img')])),
   ])
   // the first chapter's clip, byte by byte, before anything else on this path. Three tries, then the intro opens anyway.
+  // A desktop path opens on a frame set, frame 0 first.
   const first = clips[0]
-  if (!first || urls.has(first.id)) {
+  const opener = CLIPS[p][0]
+  if (opener && isSeq(opener.id)) {
+    prefetchSeq(opener.id)
+    const total = size(opener) * OPEN_SHARE
+    for (const t0 = performance.now(); seqProgress(opener.id) < OPEN_SHARE && !ctl.signal.aborted && performance.now() - t0 < OPEN_WAIT; ) {
+      openingBytes = { have: size(opener) * seqProgress(opener.id), total }
+      emit()
+      await sleep(50)
+    }
+    if (ctl.signal.aborted) return
+    opening = true
+    emit()
+  } else if (!first || urls.has(first.id)) {
     opening = true
     emit()
   } else {
@@ -166,19 +184,29 @@ async function run(p: Path) {
     urls.set(c.id, URL.createObjectURL(blob))
     emit()
   }
-  // the frame sets start with the videos: the worker fetches them PARALLEL at a time, frame 0 first, then coarse first
-  for (const c of frameSets(p)) prefetchSeq(c.id)
+  // Frame sets one at a time in story order, PARALLEL frames each, so the chapters ahead are never queued behind the far
+  // end of the film. The scrub starts the sets around the scroll on its own (scrub.ts). A set stuck for STALL (a failed
+  // frame) is passed over: the frames it does have still draw.
+  const sets = (async () => {
+    for (const c of frameSets(p)) {
+      prefetchSeq(c.id)
+      let seen = -1
+      let since = performance.now()
+      while (seqProgress(c.id) < 1 && !ctl.signal.aborted && performance.now() - since < STALL) {
+        const now = seqProgress(c.id)
+        if (now !== seen) (seen = now), (since = performance.now())
+        await sleep(50)
+      }
+    }
+  })()
   await Promise.all([
     pics,
+    sets,
     ...Array.from({ length: PARALLEL }, async () => {
       while (queue.length && !ctl.signal.aborted) await fetchOne(queue.shift()!).catch(() => {})
     }),
   ])
-  // the frame sets report through scrub.ts, the images through decode; follow them until every byte is here
-  while (!ctl.signal.aborted && progress() < 1) {
-    emit()
-    await new Promise((r) => setTimeout(r, 250))
-  }
+  emit()
   if (!ctl.signal.aborted) {
     warm = true
     emit()

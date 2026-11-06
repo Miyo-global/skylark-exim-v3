@@ -50,9 +50,10 @@ test('/story opens on the path\'s first clip at y = 0, with no hero, and the cli
     await page.waitForTimeout(60)
   }
   await page.waitForTimeout(800)
-  const shown = await page.evaluate(() =>
-    [...document.querySelectorAll<HTMLVideoElement>('video.stage__video')].filter((v) => v.style.opacity === '1').map((v) => [v.dataset.clip, v.currentTime] as const),
-  )
-  expect(shown.map(([id]) => id)).toEqual(['hf-depart'])
-  expect(shown[0][1]).toBeGreaterThan(0)
+  const shown = await page.evaluate(() => {
+    const c = document.querySelector<HTMLCanvasElement>('canvas.stage__seq')!
+    return c.style.opacity === '1' ? [c.dataset.clip, Number(c.dataset.frame)] : null
+  })
+  expect(shown?.[0]).toBe('hf-depart')
+  expect(shown?.[1]).toBeGreaterThan(0)
 })
