@@ -81,13 +81,24 @@ test('clips prefetch ahead of their chapter, one download per pass, no re-downlo
   await ctx.close()
 })
 
-test('the intro loads the chosen path\'s clips in story order, its first clip first, and no city view (#preload)', async ({ browser }) => {
-  const { ctx, page } = await open(browser, 'desktop')
-  await page.waitForSelector('#boot', { state: 'detached', timeout: 60_000 })
-  const clips = await page.evaluate(() =>
-    performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((n) => n.endsWith('.mp4')).map((c) => c.replace(/_(?:m|\d+)(?:\.(?:av1|hevc))?\.mp4$/, '')),
-  )
+const mp4s = () =>
+  performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((n) => n.endsWith('.mp4')).map((c) => c.replace(/_(?:m|\d+)(?:\.(?:av1|hevc))?\.mp4$/, ''))
+
+test('on a phone the intro loads the chosen path\'s clips in story order, its first clip first, and no city view (#preload)', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const { ctx, page } = await open(browser, 'mobile')
+  await page.waitForSelector('#boot', { state: 'detached', timeout: 120_000 })
+  const clips = await page.evaluate(mp4s)
   expect(clips[0], clips.join(', ')).toBe('/media/hf-depart')
   expect(clips.filter((c) => /opening|hero-loop/.test(c))).toEqual([])
+  await ctx.close()
+})
+
+test('on a desktop the intro opens on the first chapter\'s whole frame set and requests no story video', async ({ browser }) => {
+  const { ctx, page } = await open(browser, 'desktop')
+  await page.waitForSelector('#boot', { state: 'detached', timeout: 60_000 })
+  expect(await page.evaluate(mp4s)).toEqual([])
+  const first = await page.evaluate(() => (globalThis as unknown as { __sequences: { id: string; progress: number }[] }).__sequences.find((q) => q.id === 'stage-hf-depart'))
+  expect(first?.progress).toBe(1)
   await ctx.close()
 })

@@ -20,11 +20,12 @@ async function onScreen(page: Page) {
       return r.top <= c && r.bottom >= c
     })
     const video = [...document.querySelectorAll('video')].find((v) => v.style.opacity === '1' && v.currentSrc)
+    const canvas = document.querySelector<HTMLCanvasElement>('canvas.stage__seq')
     return {
       chapter: sec?.id ?? null,
       titles: [...(sec?.querySelectorAll('.caption__title') ?? [])].map((t) => t.textContent?.trim()),
       probe: (window as W).__scrub?.id ?? null,
-      src: video?.dataset.clip ?? video?.currentSrc ?? '',
+      src: video?.dataset.clip ?? video?.currentSrc ?? (canvas?.style.opacity === '1' ? canvas.dataset.clip : '') ?? '',
       hash: location.hash,
     }
   })

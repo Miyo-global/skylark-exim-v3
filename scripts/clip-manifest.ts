@@ -247,9 +247,9 @@ if (process.argv[1]?.endsWith('clip-manifest.ts')) {
     // SOLVE="<ids>": only those clips are being encoded; every other clip keeps its files on disk, counted at its
     // largest codec per tier (a device downloads one)
     const solve = process.env.SOLVE?.split(/\s+/).filter(Boolean)
-    // a sequence clip is fixed too: its frame set on desktop tiers, its video files on the phone ones
+    // a sequence clip is fixed too, unless it is being encoded: its frame set on desktop tiers, its video files on the phone ones
     const kept = (id: string, t: Tier) => (isSeq(id) && profile(t) === 'desktop' ? seqBytes(id, t) : Math.max(...CODECS.map((c) => fileSize(clipFile(id, t, c)))))
-    const fixed = Object.fromEntries(all.filter((id) => (solve && !solve.includes(id)) || isSeq(id)).map((id) => [id, Object.fromEntries(TIERS.map((t) => [t, kept(id, t)]))]))
+    const fixed = Object.fromEntries(all.filter((id) => !solve?.includes(id) && (solve || isSeq(id))).map((id) => [id, Object.fromEntries(TIERS.map((t) => [t, kept(id, t)]))]))
     const dur = Object.fromEntries(all.filter((id) => !(id in fixed)).map((id) => [id, probe(id)]))
     const caps = solveCaps(dur, fixed)[arg]
     if (!caps) throw new Error(`clip-manifest: ${arg} is on no path`)
