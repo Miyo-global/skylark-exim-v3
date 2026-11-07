@@ -117,3 +117,16 @@ test('the quote link is in the mobile menu', async ({ page }) => {
   await expect(quote).toHaveAttribute('href', '/quote')
   await expect(quote).toHaveAttribute('aria-current', 'page')
 })
+
+test('direct visits to /products, /about and /contact land on their homepage section (#272)', async ({ page }) => {
+  for (const id of ['products', 'about', 'contact']) {
+    for (const path of [`/${id}`, `/${id}.html`]) {
+      const res = await page.goto(path)
+      expect(res?.status(), path).toBe(200)
+      expect(new URL(page.url()).pathname, path).toBe('/')
+      expect(new URL(page.url()).hash, path).toBe(`#${id}`)
+      await ready(page)
+      await expect(page.locator(`#${id}`)).toBeInViewport()
+    }
+  }
+})

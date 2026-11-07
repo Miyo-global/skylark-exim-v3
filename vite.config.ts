@@ -5,7 +5,7 @@ import { defineConfig, loadEnv, type Connect, type Plugin } from 'vite'
 import { clipManifest } from './scripts/clip-manifest.ts'
 import { staticHero } from './scripts/static-hero.ts'
 
-/** /story, /quote and /news are their own HTML entries; /order is the standalone public/order.html: only /story boots the film. */
+/** /story, /quote and /news are their own HTML entries; /order is the standalone public/order.html: only /story boots the film; /products, /about, /contact redirect to their homepage section. */
 function documentRoutes(): Plugin {
   const rewrite = (req: Connect.IncomingMessage) => {
     const raw = req.url ?? '/'
@@ -21,7 +21,10 @@ function documentRoutes(): Plugin {
   }
   // Register inside the hook so this runs before Vite's htmlFallback.
   const attach = (server: { middlewares: Connect.Server }) => {
-    server.middlewares.use((req, _res, next) => {
+    server.middlewares.use((req, res, next) => {
+      // /products, /about, /contact (and .html): no page of their own, land on the homepage section, like vercel.json
+      const section = /^\/(products|about|contact)(?:\.html)?\/?(?:\?|$)/.exec(req.url ?? '')?.[1]
+      if (section) return res.writeHead(307, { Location: `/#${section}` }).end()
       rewrite(req)
       next()
     })
