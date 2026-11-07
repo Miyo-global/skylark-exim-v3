@@ -38,6 +38,13 @@ const OPEN_TRIES = 3
 /** a desktop opening frame set: the share of it the intro waits for (all of it: the first chapter never waits on the network), and how long at most (ms) */
 const OPEN_SHARE = 1
 const OPEN_WAIT = 8000
+/**
+ * a frame set's coarse level: frame 0 and about every 8th frame (sequence.ts loadOrder), so any scroll position in it is
+ * within a few frames of one it has. The intro also waits for the next chapter's first set to reach it (#story-direct:
+ * chapter 01 is short, a fast scroll reaches 02 about a second after the intro opens), and inside the loading window
+ * every set reaches it before any set fills in.
+ */
+const COARSE = 0.15
 /** ms without a new frame after which a frame set is passed over */
 const STALL = 10_000
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -155,9 +162,12 @@ async function run(p: Path) {
   const opener = CLIPS[p][0]
   if (opener && isSeq(opener.id)) {
     prefetchSeq(opener.id)
+    const second = CLIPS[p].find((c) => c.chapter === opener.chapter + 1 && isSeq(c.id))
+    if (second) prefetchSeq(second.id)
+    const share = () => Math.min(1, seqProgress(opener.id) / OPEN_SHARE) * 0.9 + (second ? Math.min(1, seqProgress(second.id) / COARSE) : 1) * 0.1
     const total = size(opener) * OPEN_SHARE
-    for (const t0 = performance.now(); seqProgress(opener.id) < OPEN_SHARE && !ctl.signal.aborted && performance.now() - t0 < OPEN_WAIT; ) {
-      openingBytes = { have: size(opener) * seqProgress(opener.id), total }
+    for (const t0 = performance.now(); share() < 1 && !ctl.signal.aborted && performance.now() - t0 < OPEN_WAIT; ) {
+      openingBytes = { have: total * share(), total }
       emit()
       await sleep(50)
     }
@@ -200,7 +210,10 @@ async function run(p: Path) {
       const open = list.filter((c) => seqProgress(c.id) < 1 && !stalled.has(c.id))
       if (!open.length) break
       const win = open.filter((c) => ahead(c) >= 0 && ahead(c) <= 2)
-      const go = win.length ? win : [open.sort((a, b) => rank(a) - rank(b))[0]]
+      // breadth first: every set in the window to its coarse level (the chapter on screen keeps loading throughout),
+      // then the window fills in
+      const thin = win.filter((c) => seqProgress(c.id) < COARSE)
+      const go = thin.length ? win.filter((c) => ahead(c) === 0 || thin.includes(c)) : win.length ? win : [open.sort((a, b) => rank(a) - rank(b))[0]]
       const now = performance.now()
       for (const c of open) {
         if (!go.includes(c)) {
