@@ -184,34 +184,36 @@ async function run(p: Path) {
     urls.set(c.id, URL.createObjectURL(blob))
     emit()
   }
-  // Frame sets one at a time, nearest the scroll first (#story-direct): the set of the chapter on screen, then the next
-  // chapter in the direction of travel, and outward from there. Re-picked every 50 ms, so a visitor who scrolls ahead of
-  // the load gets the frames under the scroll instead of waiting behind a far set; sets more than a chapter from the
-  // scroll are parked (in-flight frames finish), so the current and next chapter never share the link with them. A set
-  // stuck for STALL (a failed frame) is passed over: the frames it does have still draw.
+  // Frame sets nearest the scroll first (#story-direct). The chapter on screen and the next two in the direction of travel
+  // load together, each coarse first (every 32nd, 16th, 8th… frame, sequence.ts), so a fast scroll lands on a coarse frame
+  // of every chapter it reaches instead of a poster; everything else is parked (in-flight frames finish). Re-picked every
+  // 50 ms. With that window complete, the nearest remaining set loads. A set stuck for STALL (a failed frame) is passed
+  // over: the frames it does have still draw.
   const sets = (async () => {
     const list = frameSets(p)
     const stalled = new Set<string>()
-    const rank = (c: Clip) => {
-      const cur = Math.max(0, frame.index)
-      const d = (c.chapter - cur) * (frame.dir < 0 ? -1 : 1)
-      // this chapter, then the next ones in the scroll's direction, then the ones behind
-      return (d >= 0 ? d * 2 : -d * 2 + 1) * 100 + c.seg
-    }
-    let on: Clip | null = null
-    let seen = -1
-    let since = performance.now()
+    const last = new Map<string, { at: number; since: number }>()
+    const ahead = (c: Clip) => (c.chapter - Math.max(0, frame.index)) * (frame.dir < 0 ? -1 : 1)
+    // ahead of the scroll before behind it, nearest first, story order inside a chapter
+    const rank = (c: Clip) => (ahead(c) >= 0 ? ahead(c) * 2 : -ahead(c) * 2 + 1) * 100 + c.seg
     while (!ctl.signal.aborted) {
-      const open = list.filter((c) => seqProgress(c.id) < 1 && !stalled.has(c.id)).sort((a, b) => rank(a) - rank(b))
+      const open = list.filter((c) => seqProgress(c.id) < 1 && !stalled.has(c.id))
       if (!open.length) break
-      const next = open[0]
-      if (next !== on) ((on = next), (seen = -1), (since = performance.now()))
-      const cur = Math.max(0, frame.index)
-      for (const c of open) if (c !== on && Math.abs(c.chapter - cur) > 1) pauseSeq(c.id)
-      prefetchSeq(on.id)
-      const now = seqProgress(on.id)
-      if (now !== seen) (seen = now), (since = performance.now())
-      else if (performance.now() - since > STALL) stalled.add(on.id)
+      const win = open.filter((c) => ahead(c) >= 0 && ahead(c) <= 2)
+      const go = win.length ? win : [open.sort((a, b) => rank(a) - rank(b))[0]]
+      const now = performance.now()
+      for (const c of open) {
+        if (!go.includes(c)) {
+          pauseSeq(c.id)
+          last.delete(c.id)
+          continue
+        }
+        prefetchSeq(c.id)
+        const at = seqProgress(c.id)
+        const l = last.get(c.id)
+        if (!l || l.at !== at) last.set(c.id, { at, since: now })
+        else if (now - l.since > STALL) stalled.add(c.id)
+      }
       await sleep(50)
     }
   })()
