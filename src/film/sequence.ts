@@ -231,6 +231,11 @@ export class Sequence {
     this.pump(this.at, false)
   }
 
+  /** Stop starting new fetches (in-flight ones finish); prefetch() resumes. The warm cache parks far sets with it. */
+  pause() {
+    this.auto = false
+  }
+
   /** Close every decoded bitmap (the bytes stay in the worker): a set off screen holds no bitmap memory (#hd2). */
   release() {
     for (const b of this.bitmaps.values()) b.close()

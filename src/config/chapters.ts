@@ -30,7 +30,7 @@ export interface ChapterDef {
   path: 'ocean' | 'pond' | 'shared'
   /** accessible chapter name */
   label: string
-  /** desktop scroll length in vh (mobile uses 0.8×); at least 90 per clip, so a fast scroll still leaves each clip time to load */
+  /** desktop scroll length in vh (mobile uses 0.8×); about 65–75 per clip (#story-direct: 25–35 % shorter, the frames under the scroll load first, warmcache.ts), at least 75 per caption so each one stays readable */
   vh: number
   media: Media[]
   captions: Caption[]
@@ -76,22 +76,22 @@ const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map
 
 const OCEAN_ONLY: ChapterDef[] = [
   {
-    id: 'o1', path: 'ocean', label: 'Setting out', vh: 200, joinNext: 'crossfade',
+    id: 'o1', path: 'ocean', label: 'Setting out', vh: 140, joinNext: 'crossfade',
     media: [{ kind: 'video', id: 'hf-depart', alt: 'A weathered white and blue fishing boat eases away from the stone quay at sunrise while the crew coil a rope and bring in a fender.' }],
     captions: caps('o1', [[0, 0.98]]),
   },
   {
-    id: 'o2', path: 'ocean', label: 'The catch', vh: 140, joinNext: 'crossfade',
+    id: 'o2', path: 'ocean', label: 'The catch', vh: 100, joinNext: 'crossfade',
     media: [{ kind: 'video', id: 'hf-catch', alt: 'On deck, the boom\'s power block lifts a dripping net full of silver fish in over the rail while the crew lean back and pull it aboard; the fish spill onto the deck beside steel crates of ice.' }],
     captions: caps('o2', [[0.02, 0.98]]),
   },
   {
-    id: 'o3', path: 'ocean', label: 'On ice', vh: 100, joinNext: 'crossfade',
+    id: 'o3', path: 'ocean', label: 'On ice', vh: 75, joinNext: 'crossfade',
     media: [{ kind: 'video', id: 'hf-ice', alt: 'Seen from above, the crew kneel on the wet deck sorting tuna and silver fish into iced steel crates.' }],
     captions: caps('o3', [[0.02, 0.98]]),
   },
   {
-    id: 'o4', path: 'ocean', label: 'Back to Vizag', vh: 160, joinNext: 'crossfade',
+    id: 'o4', path: 'ocean', label: 'Back to Vizag', vh: 110, joinNext: 'crossfade',
     media: [{ kind: 'video', id: 'hf-return', alt: 'Porters push trolleys of iced steel crates along the wharf as the fishing boat comes alongside.' }],
     captions: caps('o4', [[0.02, 0.98]]),
   },
@@ -99,17 +99,17 @@ const OCEAN_ONLY: ChapterDef[] = [
 
 const POND_ONLY: ChapterDef[] = [
   {
-    id: 'p1', path: 'pond', label: 'The ponds', vh: 120, joinNext: 'crossfade',
+    id: 'p1', path: 'pond', label: 'The ponds', vh: 85, joinNext: 'crossfade',
     media: [{ kind: 'video', id: 'hf-ponds', alt: 'Aerial view over a grid of shrimp ponds on a bright morning, aerators throwing white water, a white refrigerated truck on a bund road.' }],
     captions: caps('p1', [[0, 0.98]]),
   },
   {
-    id: 'p2', path: 'pond', label: 'Traceable', vh: 100, joinNext: 'crossfade',
+    id: 'p2', path: 'pond', label: 'Traceable', vh: 75, joinNext: 'crossfade',
     media: [{ kind: 'video', id: 'hf-sample', alt: 'A farm technician crouches on the pond bank and reads a handheld water meter, its probe hanging on a cable into the pond, aerators churning behind him.' }],
     captions: caps('p2', [[0.02, 0.98]]),
   },
   {
-    id: 'p3', path: 'pond', label: 'Harvest', vh: 180, joinNext: 'crossfade',
+    id: 'p3', path: 'pond', label: 'Harvest', vh: 130, joinNext: 'crossfade',
     media: [
       { kind: 'video', id: 'hf-harvest', alt: 'Sunrise at a shrimp pond: four workers wade behind the drag net, its line of white floats arcing in front of them; on the bank a crew stacks steel crates beside white ice boxes and a white truck.' },
       { kind: 'video', id: 'hf-sort', alt: 'On the pond bank, workers tip live shrimp onto crushed ice in steel and white crates beside the refrigerated truck.' },
@@ -121,7 +121,7 @@ const POND_ONLY: ChapterDef[] = [
 /** The farmed path's plant: the shrimp footage and the full work flow (CONTENT.md, written for shrimp). */
 const PLANT_POND: ChapterDef[] = [
   {
-    id: 'intake', path: 'pond', label: 'Intake', vh: 360, joinNext: 'crossfade', scrim: 'soft',
+    id: 'intake', path: 'pond', label: 'Intake', vh: 260, joinNext: 'crossfade', scrim: 'soft',
     media: [
       { kind: 'video', id: 'hf-arrive', alt: 'At dawn a white refrigerated truck drives in through the plant gate, its driver at the wheel and the cooling unit misting, and turns toward the loading docks.' },
       { kind: 'video', id: 'hf-reverse', alt: 'The truck stands backed into the insulated dock bay, its rear lights on, as a worker in a hi-vis vest guides it with a raised palm and the driver sits at the wheel.' },
@@ -131,7 +131,7 @@ const PLANT_POND: ChapterDef[] = [
     captions: caps('intake', [[0.02, 0.98]]),
   },
   {
-    id: 'process', path: 'pond', label: 'Process', vh: 200, joinNext: 'crossfade', scrim: 'soft',
+    id: 'process', path: 'pond', label: 'Process', vh: 170, joinNext: 'crossfade', scrim: 'soft',
     media: [
       { kind: 'video', id: 'hf-wash', alt: 'A bright processing hall mid-shift: shrimp ride a conveyor while workers in caps, masks and gloves grade them at the stainless tables beside it.' },
       { kind: 'video', id: 'hf-peel', alt: 'Workers peel and devein shrimp by hand at a stainless table.' },
@@ -142,7 +142,7 @@ const PLANT_POND: ChapterDef[] = [
     captions: caps('process', [[0.02, 0.25], [0.25, 0.5], [0.5, 0.98]]),
   },
   {
-    id: 'coldchain', path: 'pond', label: 'Lab · freeze · pack', vh: 360, joinNext: 'crossfade', scrim: 'soft',
+    id: 'coldchain', path: 'pond', label: 'Lab · freeze · pack', vh: 260, joinNext: 'crossfade', scrim: 'soft',
     // one shot per caption: lab, IQF, packing, cold store (each a quarter of the scroll). Ranges sit on the clip
     // boundaries, so no shot is ever on screen without its caption (#313); captions.ts cuts an outgoing caption the moment
     // its clip leaves, so it never stays over the next shot
@@ -159,7 +159,7 @@ const PLANT_POND: ChapterDef[] = [
 /** The wild-catch path's plant (#219): whole fish and tuna loins through the same plant, never a shrimp on screen or in the copy. */
 const PLANT_OCEAN: ChapterDef[] = [
   {
-    id: 'intake', path: 'ocean', label: 'Intake', vh: 480, joinNext: 'crossfade', scrim: 'soft',
+    id: 'intake', path: 'ocean', label: 'Intake', vh: 340, joinNext: 'crossfade', scrim: 'soft',
     media: [
       { kind: 'video', id: 'hf-arrive', alt: 'At dawn a white refrigerated truck drives in through the plant gate, its driver at the wheel and the cooling unit misting, and turns toward the loading docks.' },
       { kind: 'video', id: 'hf-reverse', alt: 'The truck stands backed into the insulated dock bay, its rear lights on, as a worker in a hi-vis vest guides it with a raised palm and the driver sits at the wheel.' },
@@ -170,7 +170,7 @@ const PLANT_OCEAN: ChapterDef[] = [
     captions: caps('intake.ocean', [[0.02, 0.98]]),
   },
   {
-    id: 'process', path: 'ocean', label: 'Washing and portioning', vh: 180, joinNext: 'crossfade', scrim: 'soft',
+    id: 'process', path: 'ocean', label: 'Washing and portioning', vh: 130, joinNext: 'crossfade', scrim: 'soft',
     media: [
       { kind: 'video', id: 'hf-fish-wash', alt: 'Whole seer fish and Indian mackerel are rinsed under chilled water on a stainless table and sorted by size into steel crates.' },
       { kind: 'video', id: 'hf-fish-cut', alt: 'A worker portions a deep-red tuna loin on a white board; finished loins lie on crushed ice beside it.' },
@@ -178,9 +178,9 @@ const PLANT_OCEAN: ChapterDef[] = [
     captions: caps('process.ocean', [[0.02, 0.5], [0.5, 0.98]]),
   },
   {
-    // 220: the cold store gets about a screen of scroll (≥ 600 px at 900 high); the freezer push-in crops the front
+    // the cold store gets 75 vh of scroll (675 px at 900 high, its span 0.5 of 150); the freezer push-in crops the front
     // worker's face in its last third, so its scroll stops at 0.6 of the clip
-    id: 'coldchain', path: 'ocean', label: 'Freeze and store', vh: 220, joinNext: 'crossfade', scrim: 'soft',
+    id: 'coldchain', path: 'ocean', label: 'Freeze and store', vh: 150, joinNext: 'crossfade', scrim: 'soft',
     media: [
       { kind: 'video', id: 'hf-fish-freeze', until: 0.6, span: 0.5, alt: 'A worker in a white coat wheels a steel rack of whole fish and tuna loins into the blast freezer as cold vapour rolls out of the open door.' },
       { kind: 'video', id: 'hf-store', alt: 'In the cold store, workers in insulated jackets, hoods and masks walk down an aisle between racks of frosted cartons on wooden pallets; one pulls a pallet jack with a wrapped pallet of cartons.' },
@@ -193,13 +193,13 @@ const PLANT_OCEAN: ChapterDef[] = [
 /** The shared ending, identical on both paths: documents, the port, the ship out to sea, the markets. */
 const ENDING: ChapterDef[] = [
   {
-    id: 'docs', path: 'shared', label: 'Documentation', vh: 100, joinNext: 'cut',
+    id: 'docs', path: 'shared', label: 'Documentation', vh: 75, joinNext: 'cut',
     media: [{ kind: 'dom', poster: 'ph-docs', alt: 'An export office desk in daylight: shipment folders, a binder of certificates and a laptop with a tracking map. Three cards: export documents, compliance, shipment tracking.' }],
     // up for the whole chapter (#313); the chapter change cuts it, so "Paperwork, done properly" is never over the port
     captions: caps('docs', [[0.02, 0.98]]).map((c) => ({ ...c, extra: 'doc-cards' as const })),
   },
   {
-    id: 'port', path: 'shared', label: 'The port', vh: 560, joinNext: 'crossfade', scrim: 'soft',
+    id: 'port', path: 'shared', label: 'The port', vh: 380, joinNext: 'crossfade', scrim: 'soft',
     media: [
       // Five shots of one lift, each a slow forward push. 1 → 2 → 3 run on from each other's last frame; 4 is the box in the
       // air from a new angle, 5 the port from above.
@@ -212,7 +212,7 @@ const ENDING: ChapterDef[] = [
     captions: caps('port', [[0.02, 0.98]]),
   },
   {
-    id: 'sea', path: 'shared', label: 'At sea', vh: 180, joinNext: 'crossfade',
+    id: 'sea', path: 'shared', label: 'At sea', vh: 130, joinNext: 'crossfade',
     media: [
       { kind: 'video', id: 'hf-ship', alt: 'From high on the crane, the camera looks down on the loaded container ship\'s stacked containers and white bridge as it pulls away from the quay.' },
       { kind: 'video', id: 'hf-sail', alt: 'Seen from straight above, the loaded container ship sails alone across deep blue water, trailing a white wake.' },
@@ -220,7 +220,7 @@ const ENDING: ChapterDef[] = [
     captions: caps('sea', [[0.02, 0.98]]),
   },
   {
-    id: 'world', path: 'shared', label: 'The world', vh: 220, joinNext: 'cut', theme: 'light',
+    id: 'world', path: 'shared', label: 'The world', vh: 180, joinNext: 'cut', theme: 'light',
     media: [{ kind: 'globe', alt: `A bright daytime globe with gold routes from Visakhapatnam to ${MARKET_COUNT} markets.` }],
     captions: caps('world', [[0.08, 1.01]]).map((c) => ({ ...c, body: undefined, extra: 'markets' as const })),
   },

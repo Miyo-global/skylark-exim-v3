@@ -1,15 +1,15 @@
 import { decodeAll, storyReady } from '../engine/boot'
 import { env } from '../engine/env'
-import { store, type Path } from '../engine/store'
+import { frame, store, type Path } from '../engine/store'
 import { CLIPS, SEQ, type Clip } from './manifest'
-import { prefetchSeq, seqProgress } from './scrub'
+import { pauseSeq, prefetchSeq, seqProgress } from './scrub'
 import { W, avifReady, clipUrl, codec, codecReady, isSeq, served } from './segments'
 
 /**
  * Warm cache. The intro opens once the active path's first clip is a Blob (openingReady). The rest of that path keeps
  * loading behind it: every other video clip becomes a Blob (the stage's <video>s play from blob: URLs, so a seek never
- * touches the network) and every desktop frame sequence lands in the decode worker's byte store (sequence.ts), in story
- * order. progress() and `warm` still mean the whole active path, which the header hairline and the scroll tests wait
+ * touches the network) and every desktop frame sequence lands in the decode worker's byte store (sequence.ts),
+ * nearest the scroll first. progress() and `warm` still mean the whole active path, which the header hairline and the scroll tests wait
  * for. A path switch loads the other path the same way and keeps the chapters both share. Every image goes in too: the
  * stage's posters and stills (scrub.ts sets them all at mount) and the story's own photos, decoded. Only the active
  * path, at the page's own tier, in one codec (it waits for segments.ts to settle the codec). Save-Data and 2g/3g skip
@@ -38,6 +38,13 @@ const OPEN_TRIES = 3
 /** a desktop opening frame set: the share of it the intro waits for (all of it: the first chapter never waits on the network), and how long at most (ms) */
 const OPEN_SHARE = 1
 const OPEN_WAIT = 8000
+/**
+ * a frame set's coarse level: frame 0 and about every 8th frame (sequence.ts loadOrder), so any scroll position in it is
+ * within a few frames of one it has. The intro also waits for the next chapter's first set to reach it (#story-direct:
+ * chapter 01 is short, a fast scroll reaches 02 about a second after the intro opens), and inside the loading window
+ * every set reaches it before any set fills in.
+ */
+const COARSE = 0.15
 /** ms without a new frame after which a frame set is passed over */
 const STALL = 10_000
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -155,9 +162,12 @@ async function run(p: Path) {
   const opener = CLIPS[p][0]
   if (opener && isSeq(opener.id)) {
     prefetchSeq(opener.id)
+    const second = CLIPS[p].find((c) => c.chapter === opener.chapter + 1 && isSeq(c.id))
+    if (second) prefetchSeq(second.id)
+    const share = () => Math.min(1, seqProgress(opener.id) / OPEN_SHARE) * 0.9 + (second ? Math.min(1, seqProgress(second.id) / COARSE) : 1) * 0.1
     const total = size(opener) * OPEN_SHARE
-    for (const t0 = performance.now(); seqProgress(opener.id) < OPEN_SHARE && !ctl.signal.aborted && performance.now() - t0 < OPEN_WAIT; ) {
-      openingBytes = { have: size(opener) * seqProgress(opener.id), total }
+    for (const t0 = performance.now(); share() < 1 && !ctl.signal.aborted && performance.now() - t0 < OPEN_WAIT; ) {
+      openingBytes = { have: total * share(), total }
       emit()
       await sleep(50)
     }
@@ -184,19 +194,40 @@ async function run(p: Path) {
     urls.set(c.id, URL.createObjectURL(blob))
     emit()
   }
-  // Frame sets one at a time in story order, PARALLEL frames each, so the chapters ahead are never queued behind the far
-  // end of the film. The scrub starts the sets around the scroll on its own (scrub.ts). A set stuck for STALL (a failed
-  // frame) is passed over: the frames it does have still draw.
+  // Frame sets nearest the scroll first (#story-direct). The chapter on screen and the next two in the direction of travel
+  // load together, each coarse first (every 32nd, 16th, 8th… frame, sequence.ts), so a fast scroll lands on a coarse frame
+  // of every chapter it reaches instead of a poster; everything else is parked (in-flight frames finish). Re-picked every
+  // 50 ms. With that window complete, the nearest remaining set loads. A set stuck for STALL (a failed frame) is passed
+  // over: the frames it does have still draw.
   const sets = (async () => {
-    for (const c of frameSets(p)) {
-      prefetchSeq(c.id)
-      let seen = -1
-      let since = performance.now()
-      while (seqProgress(c.id) < 1 && !ctl.signal.aborted && performance.now() - since < STALL) {
-        const now = seqProgress(c.id)
-        if (now !== seen) (seen = now), (since = performance.now())
-        await sleep(50)
+    const list = frameSets(p)
+    const stalled = new Set<string>()
+    const last = new Map<string, { at: number; since: number }>()
+    const ahead = (c: Clip) => (c.chapter - Math.max(0, frame.index)) * (frame.dir < 0 ? -1 : 1)
+    // ahead of the scroll before behind it, nearest first, story order inside a chapter
+    const rank = (c: Clip) => (ahead(c) >= 0 ? ahead(c) * 2 : -ahead(c) * 2 + 1) * 100 + c.seg
+    while (!ctl.signal.aborted) {
+      const open = list.filter((c) => seqProgress(c.id) < 1 && !stalled.has(c.id))
+      if (!open.length) break
+      const win = open.filter((c) => ahead(c) >= 0 && ahead(c) <= 2)
+      // breadth first: every set in the window to its coarse level (the chapter on screen keeps loading throughout),
+      // then the window fills in
+      const thin = win.filter((c) => seqProgress(c.id) < COARSE)
+      const go = thin.length ? win.filter((c) => ahead(c) === 0 || thin.includes(c)) : win.length ? win : [open.sort((a, b) => rank(a) - rank(b))[0]]
+      const now = performance.now()
+      for (const c of open) {
+        if (!go.includes(c)) {
+          pauseSeq(c.id)
+          last.delete(c.id)
+          continue
+        }
+        prefetchSeq(c.id)
+        const at = seqProgress(c.id)
+        const l = last.get(c.id)
+        if (!l || l.at !== at) last.set(c.id, { at, since: now })
+        else if (now - l.since > STALL) stalled.add(c.id)
       }
+      await sleep(50)
     }
   })()
   await Promise.all([
