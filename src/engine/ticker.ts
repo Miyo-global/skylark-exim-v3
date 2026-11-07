@@ -8,6 +8,8 @@ import { frame } from './store'
 gsap.registerPlugin(ScrollTrigger)
 
 type TickFn = (time: number) => void
+/** Lenis smoothing per frame (0..1, higher follows the wheel closer); ?lerp=0.12 overrides it for A/B runs */
+const LERP = Number(new URLSearchParams(typeof location === 'undefined' ? '' : location.search).get('lerp')) || 0.14
 let subs: { fn: TickFn; order: number }[] = []
 let lenis: Lenis | null = null
 let started = false
@@ -37,10 +39,9 @@ export function startEngine() {
   started = true
   // Touch and reduced motion keep native scrolling.
   if (!env.coarse && !env.reduced) {
-    // lerp 0.08 / wheel 0.8 (was 0.1 / 1): 10 notches through the plant at 1440×900, 6 runs each, put the picture more
-    // than 2 frames off the scroll target on 3.8% of frames (was 5.6%), the largest step per frame at ~20 px (was ~25);
-    // it settles ~250 ms later and a notch travels 80 px instead of 100
-    lenis = new Lenis({ autoRaf: false, lerp: 0.08, wheelMultiplier: 0.8, smoothWheel: true, syncTouch: false })
+    // #story-direct: a notch moves the page its full 100 px and the page follows the wheel closely, the way
+    // terminal-industries.com scrolls (was lerp 0.08 / wheel 0.8). The scrub adds no easing of its own on top.
+    lenis = new Lenis({ autoRaf: false, lerp: LERP, wheelMultiplier: 1, smoothWheel: true, syncTouch: false })
     lenis.on('scroll', ScrollTrigger.update)
   }
   if (env.coarse) ScrollTrigger.config({ ignoreMobileResize: true })
