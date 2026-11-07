@@ -76,11 +76,12 @@ export function staticHero(): Plugin {
       .join('\n    ')
   return {
     name: 'static-hero',
-    // the hero pages' own stylesheets are small: inline them so the first paint waits on no request (lazy CSS stays lazy)
+    // the hero pages' own stylesheets are small: inline them so the first paint waits on no request (lazy CSS stays lazy);
+    // /news and /quote too (#308): their static heading is their LCP
     generateBundle: {
       order: 'post',
       handler(_, bundle) {
-        for (const name of ['index.html', 'story.html']) {
+        for (const name of ['index.html', 'story.html', 'news.html', 'quote.html']) {
           const html = bundle[name]
           if (html?.type !== 'asset') continue
           html.source = String(html.source).replace(/<link rel="stylesheet"[^>]*href="\/(assets\/[^"]+\.css)"[^>]*>/g, (tag, file: string) => {
