@@ -1,15 +1,15 @@
 import { decodeAll, storyReady } from '../engine/boot'
 import { env } from '../engine/env'
-import { store, type Path } from '../engine/store'
+import { frame, store, type Path } from '../engine/store'
 import { CLIPS, SEQ, type Clip } from './manifest'
-import { prefetchSeq, seqProgress } from './scrub'
+import { pauseSeq, prefetchSeq, seqProgress } from './scrub'
 import { W, avifReady, clipUrl, codec, codecReady, isSeq, served } from './segments'
 
 /**
  * Warm cache. The intro opens once the active path's first clip is a Blob (openingReady). The rest of that path keeps
  * loading behind it: every other video clip becomes a Blob (the stage's <video>s play from blob: URLs, so a seek never
- * touches the network) and every desktop frame sequence lands in the decode worker's byte store (sequence.ts), in story
- * order. progress() and `warm` still mean the whole active path, which the header hairline and the scroll tests wait
+ * touches the network) and every desktop frame sequence lands in the decode worker's byte store (sequence.ts),
+ * nearest the scroll first. progress() and `warm` still mean the whole active path, which the header hairline and the scroll tests wait
  * for. A path switch loads the other path the same way and keeps the chapters both share. Every image goes in too: the
  * stage's posters and stills (scrub.ts sets them all at mount) and the story's own photos, decoded. Only the active
  * path, at the page's own tier, in one codec (it waits for segments.ts to settle the codec). Save-Data and 2g/3g skip
@@ -184,19 +184,35 @@ async function run(p: Path) {
     urls.set(c.id, URL.createObjectURL(blob))
     emit()
   }
-  // Frame sets one at a time in story order, PARALLEL frames each, so the chapters ahead are never queued behind the far
-  // end of the film. The scrub starts the sets around the scroll on its own (scrub.ts). A set stuck for STALL (a failed
-  // frame) is passed over: the frames it does have still draw.
+  // Frame sets one at a time, nearest the scroll first (#story-direct): the set of the chapter on screen, then the next
+  // chapter in the direction of travel, and outward from there. Re-picked every 50 ms, so a visitor who scrolls ahead of
+  // the load gets the frames under the scroll instead of waiting behind a far set; sets more than a chapter from the
+  // scroll are parked (in-flight frames finish), so the current and next chapter never share the link with them. A set
+  // stuck for STALL (a failed frame) is passed over: the frames it does have still draw.
   const sets = (async () => {
-    for (const c of frameSets(p)) {
-      prefetchSeq(c.id)
-      let seen = -1
-      let since = performance.now()
-      while (seqProgress(c.id) < 1 && !ctl.signal.aborted && performance.now() - since < STALL) {
-        const now = seqProgress(c.id)
-        if (now !== seen) (seen = now), (since = performance.now())
-        await sleep(50)
-      }
+    const list = frameSets(p)
+    const stalled = new Set<string>()
+    const rank = (c: Clip) => {
+      const cur = Math.max(0, frame.index)
+      const d = (c.chapter - cur) * (frame.dir < 0 ? -1 : 1)
+      // this chapter, then the next ones in the scroll's direction, then the ones behind
+      return (d >= 0 ? d * 2 : -d * 2 + 1) * 100 + c.seg
+    }
+    let on: Clip | null = null
+    let seen = -1
+    let since = performance.now()
+    while (!ctl.signal.aborted) {
+      const open = list.filter((c) => seqProgress(c.id) < 1 && !stalled.has(c.id)).sort((a, b) => rank(a) - rank(b))
+      if (!open.length) break
+      const next = open[0]
+      if (next !== on) ((on = next), (seen = -1), (since = performance.now()))
+      const cur = Math.max(0, frame.index)
+      for (const c of open) if (c !== on && Math.abs(c.chapter - cur) > 1) pauseSeq(c.id)
+      prefetchSeq(on.id)
+      const now = seqProgress(on.id)
+      if (now !== seen) (seen = now), (since = performance.now())
+      else if (performance.now() - since > STALL) stalled.add(on.id)
+      await sleep(50)
     }
   })()
   await Promise.all([
