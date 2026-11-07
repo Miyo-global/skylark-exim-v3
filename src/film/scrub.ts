@@ -126,6 +126,8 @@ export function bindStage(el: HTMLElement, segments: Segment[]) {
   const ro = seqCanvas && seqStage ? new ResizeObserver(seqStage.resize) : null
   if (ro && seqCanvas && seqStage) (ro.observe(seqCanvas), seqStage.resize())
   seqOn = false
+  // a path switch: the canvas still holds the other path's last frame until this path draws
+  if (seqCanvas) seqCanvas.style.opacity = '0'
   for (const s of slots) s.v.style.opacity = '0'
   cur = -1
   shown = null

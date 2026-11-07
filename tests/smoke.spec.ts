@@ -57,3 +57,16 @@ test('/story opens on the path\'s first clip at y = 0, with no hero, and the cli
   expect(shown?.[0]).toBe('hf-depart')
   expect(shown?.[1]).toBeGreaterThan(0)
 })
+
+// #212: the start chapter's moving picture is the homepage hero loop, not a stage clip (video-smoothness skips it), so
+// the loop itself must advance before the first scroll
+test('the homepage hero loop plays before the first scroll', async ({ page }) => {
+  await page.goto('/')
+  await ready(page)
+  const video = page.locator('.hero video')
+  await expect(video).toHaveCount(1)
+  const t0 = await video.evaluate((v: HTMLVideoElement) => v.currentTime)
+  await page.waitForTimeout(1500)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  expect(await video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(t0)
+})

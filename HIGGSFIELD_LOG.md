@@ -277,3 +277,22 @@ Tarun approved up to 390 credits, max 2 tries per shot. Balance at the start is 
 | hf-port-3 | video, try 1 | 73419515 | 10 | 205 | PASS | the corner locks hold and the box rises straight up off the trailer in one move, never back down; the chassis is revealed; everything stays sharp and solid |
 
 **Total for this pass: 205 credits** (9 images at 15, 7 charged videos at 10; balance 263.36 → 58.36, checked). Under the 255 stop line and the 390 approval. Two failed hf-reverse jobs were not charged. One still fallback: hf-reverse. Masters (gitignored): `masters/<id>/master.mp4` (72 frames, 2560×1440, frames picked evenly from the 124-frame take, no blending) and `masters/<id>/start.png` (the 4K start frame).
+
+## 2026-11-06: last credits (#312, #315; fix/story-sync)
+
+Tarun approved spending the ~58 credits left, #312 and #315 first, max 2 tries per shot. Start balance 56.36. Prices from
+`get_cost`: `gpt_image_2_5` xhigh 4k = 7, `minimax_h3` 2K 5 s = 10. Every image is an edit of the shot's own frame.
+`hf-harvest` and `hf-sort` were checked first and already show steel crates heaped with ice (the 3 Nov remake), so no
+credits went there.
+
+| Shot | Kind | Job | Credits | Running total | Verdict | Notes |
+|---|---|---|---|---|---|---|
+| ph-docs (desk) | image, try 1 (ref) | 79beae95 | 7 | 7 | PASS (cropped) | empty harbour through the window, no boats; blank laptop screen; no readable text. A ship painting on the wall is cropped off (3392×1908 master, never upscaled) |
+| hf-store | image, try 1 (ref) | a10fff1a | 7 | 14 | PASS | real cartons on wooden pallets in every rack; workers in insulated jackets and masks; no text |
+| hf-unload-fish | image, try 1 (ref) | 1d72e63a | 7 | 21 | REJECT | recomposed: the truck faces the camera and the fish show through the windshield |
+| hf-store | video, try 1 | f1e679c4 | 10 | 31 | PASS (124 → 72 evenly, no blending) | one slow forward dolly; everyone walks one way; racks, pallets and cartons stay solid; no text |
+| hf-unload-fish | image, try 2 (ref) | 4bf0c59e | 7 | 38 | PASS | open steel crates with handles, whole fish and tuna on crushed ice; the dock layout kept; no people, no text |
+
+**Total: 38 credits.** Balance should have been 18.36, but it read 0.06: about 18 credits went on "Seed Audio 1.0" jobs
+at 20:00 UTC on 6 Nov, which this session did not start. So `hf-unload-fish` has no video take: its master is the passed
+try-2 frame with a slow forward push (`scripts/still-push.py masters/hf-unload-fish/start.png masters/hf-unload-fish/master.mp4 0.5 0.42 1.06`, 0 credits).
