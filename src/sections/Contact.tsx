@@ -46,7 +46,7 @@ export function Contact() {
         </m.div>
       </div>
       <footer className="contact-band__foot mono">
-        <Mark size={56} />
+        <Mark size={56} lazy />
         <span>© {new Date().getFullYear()} Skylark Exim</span>
         <span>Visakhapatnam, Andhra Pradesh</span>
       </footer>

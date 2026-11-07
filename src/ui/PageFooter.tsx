@@ -4,7 +4,7 @@ import { Mark } from './Mark'
 export function PageFooter() {
   return (
     <footer className="doc-foot">
-      <Mark size={56} />
+      <Mark size={56} lazy />
       <span>© {new Date().getFullYear()} Skylark Exim</span>
       <span>Visakhapatnam, Andhra Pradesh</span>
       <a href="/#contact">Contact</a>
