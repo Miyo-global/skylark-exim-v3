@@ -109,6 +109,8 @@ const seqFor = (id: string) => {
 }
 /** start fetching a sequence clip's frames (the warm cache calls this for every set of the path, at mount) */
 export const prefetchSeq = (id: string) => void seqFor(id)?.prefetch()
+/** park a set's fetching (the warm cache's scheduler, for a set far from the scroll) */
+export const pauseSeq = (id: string) => void seqs.get(id)?.pause()
 /** 0..1 of a sequence clip's frames in the worker */
 export const seqProgress = (id: string) => seqs.get(id)?.progress ?? 0
 /** neighbours are only prefetched after the visitor first scrolls, so the first screen costs just the first clip */
