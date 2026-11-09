@@ -214,7 +214,7 @@ const ENDING: ChapterDef[] = [
   {
     id: 'sea', path: 'shared', label: 'At sea', vh: 130, joinNext: 'crossfade',
     media: [
-      { kind: 'video', id: 'hf-ship', alt: 'From high on the crane, the camera looks down on the loaded container ship\'s stacked containers and white bridge as it pulls away from the quay.' },
+      { kind: 'video', id: 'hf-ship', until: 0.45, alt: 'From high on the crane, the camera looks down on the loaded container ship\'s stacked containers and white bridge as it pulls away from the quay.' },
       { kind: 'video', id: 'hf-sail', alt: 'Seen from straight above, the loaded container ship sails alone across deep blue water, trailing a white wake.' },
     ],
     captions: caps('sea', [[0.02, 0.98]]),
