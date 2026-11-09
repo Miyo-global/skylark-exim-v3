@@ -1,0 +1,470 @@
+[
+ {
+  "name": "hf-arrive",
+  "frames": 72,
+  "grey_max": 1.4,
+  "grey_frame": 36,
+  "rewind": 2.7,
+  "rewind_cell": [
+   11,
+   4
+  ],
+  "return": -0.46
+ },
+ {
+  "name": "hf-catch",
+  "frames": 72,
+  "grey_max": 1.4,
+  "grey_frame": 71,
+  "rewind": 5.2,
+  "rewind_cell": [
+   9,
+   2
+  ],
+  "return": -0.24
+ },
+ {
+  "name": "hf-catch-seq",
+  "frames": 72,
+  "grey_max": 1.4,
+  "grey_frame": 70,
+  "rewind": 5.2,
+  "rewind_cell": [
+   9,
+   2
+  ],
+  "return": -0.24
+ },
+ {
+  "name": "hf-depart",
+  "frames": 72,
+  "grey_max": 11.7,
+  "grey_frame": 40,
+  "rewind": 2.8,
+  "rewind_cell": [
+   1,
+   8
+  ],
+  "return": -0.2
+ },
+ {
+  "name": "hf-fish-cut",
+  "frames": 72,
+  "grey_max": 1.4,
+  "grey_frame": 65,
+  "rewind": 9.0,
+  "rewind_cell": [
+   4,
+   0
+  ],
+  "return": -0.28
+ },
+ {
+  "name": "hf-fish-freeze",
+  "frames": 72,
+  "grey_max": 11.5,
+  "grey_frame": 71,
+  "rewind": 5.1,
+  "rewind_cell": [
+   0,
+   8
+  ],
+  "return": -0.42
+ },
+ {
+  "name": "hf-fish-intake",
+  "frames": 72,
+  "grey_max": 7.7,
+  "grey_frame": 44,
+  "rewind": 0.5,
+  "rewind_cell": [
+   3,
+   8
+  ],
+  "return": -0.28
+ },
+ {
+  "name": "hf-fish-wash",
+  "frames": 72,
+  "grey_max": 4.0,
+  "grey_frame": 68,
+  "rewind": 2.8,
+  "rewind_cell": [
+   11,
+   5
+  ],
+  "return": -0.13
+ },
+ {
+  "name": "hf-harvest",
+  "frames": 72,
+  "grey_max": 5.7,
+  "grey_frame": 71,
+  "rewind": 3.3,
+  "rewind_cell": [
+   12,
+   7
+  ],
+  "return": -0.28
+ },
+ {
+  "name": "hf-ice",
+  "frames": 72,
+  "grey_max": 0.4,
+  "grey_frame": 52,
+  "rewind": 2.1,
+  "rewind_cell": [
+   4,
+   5
+  ],
+  "return": -0.29
+ },
+ {
+  "name": "hf-intake",
+  "frames": 72,
+  "grey_max": 6.7,
+  "grey_frame": 69,
+  "rewind": 13.5,
+  "rewind_cell": [
+   2,
+   3
+  ],
+  "return": -0.2
+ },
+ {
+  "name": "hf-iqf",
+  "frames": 72,
+  "grey_max": 5.7,
+  "grey_frame": 32,
+  "rewind": 9.8,
+  "rewind_cell": [
+   2,
+   3
+  ],
+  "return": -0.29
+ },
+ {
+  "name": "hf-lab",
+  "frames": 72,
+  "grey_max": 8.2,
+  "grey_frame": 11,
+  "rewind": 3.3,
+  "rewind_cell": [
+   15,
+   0
+  ],
+  "return": -0.18
+ },
+ {
+  "name": "hf-lab-seq",
+  "frames": 72,
+  "grey_max": 8.2,
+  "grey_frame": 11,
+  "rewind": 3.4,
+  "rewind_cell": [
+   15,
+   0
+  ],
+  "return": -0.18
+ },
+ {
+  "name": "hf-pack",
+  "frames": 72,
+  "grey_max": 6.2,
+  "grey_frame": 71,
+  "rewind": 12.1,
+  "rewind_cell": [
+   6,
+   2
+  ],
+  "return": -0.25
+ },
+ {
+  "name": "hf-peel",
+  "frames": 43,
+  "grey_max": 9.7,
+  "grey_frame": 41,
+  "rewind": 2.6,
+  "rewind_cell": [
+   0,
+   0
+  ],
+  "return": 0.14
+ },
+ {
+  "name": "hf-peel-seq",
+  "frames": 43,
+  "grey_max": 9.1,
+  "grey_frame": 42,
+  "rewind": 2.6,
+  "rewind_cell": [
+   0,
+   0
+  ],
+  "return": 0.14
+ },
+ {
+  "name": "hf-ponds",
+  "frames": 72,
+  "grey_max": 6.3,
+  "grey_frame": 59,
+  "rewind": 0.1,
+  "rewind_cell": [
+   9,
+   4
+  ],
+  "return": -0.01
+ },
+ {
+  "name": "hf-port-1",
+  "frames": 49,
+  "grey_max": 8.5,
+  "grey_frame": 48,
+  "rewind": 0.1,
+  "rewind_cell": [
+   13,
+   1
+  ],
+  "return": -0.49
+ },
+ {
+  "name": "hf-port-1-seq",
+  "frames": 49,
+  "grey_max": 6.8,
+  "grey_frame": 4,
+  "rewind": 0.2,
+  "rewind_cell": [
+   13,
+   1
+  ],
+  "return": -0.5
+ },
+ {
+  "name": "hf-port-2",
+  "frames": 60,
+  "grey_max": 7.0,
+  "grey_frame": 3,
+  "rewind": 0.0,
+  "rewind_cell": [
+   11,
+   2
+  ],
+  "return": -0.43
+ },
+ {
+  "name": "hf-port-2-seq",
+  "frames": 60,
+  "grey_max": 6.8,
+  "grey_frame": 32,
+  "rewind": 0.0,
+  "rewind_cell": [
+   11,
+   2
+  ],
+  "return": -0.43
+ },
+ {
+  "name": "hf-port-3",
+  "frames": 60,
+  "grey_max": 12.0,
+  "grey_frame": 11,
+  "rewind": 0.7,
+  "rewind_cell": [
+   15,
+   8
+  ],
+  "return": -0.09
+ },
+ {
+  "name": "hf-port-3-seq",
+  "frames": 60,
+  "grey_max": 11.3,
+  "grey_frame": 10,
+  "rewind": 0.7,
+  "rewind_cell": [
+   14,
+   0
+  ],
+  "return": -0.09
+ },
+ {
+  "name": "hf-port-4",
+  "frames": 60,
+  "grey_max": 18.0,
+  "grey_frame": 41,
+  "rewind": 18.4,
+  "rewind_cell": [
+   0,
+   1
+  ],
+  "return": -0.09
+ },
+ {
+  "name": "hf-port-4-seq",
+  "frames": 60,
+  "grey_max": 16.2,
+  "grey_frame": 42,
+  "rewind": 18.0,
+  "rewind_cell": [
+   0,
+   1
+  ],
+  "return": -0.09
+ },
+ {
+  "name": "hf-port-5",
+  "frames": 60,
+  "grey_max": 21.7,
+  "grey_frame": 53,
+  "rewind": 13.1,
+  "rewind_cell": [
+   7,
+   6
+  ],
+  "return": 0.1
+ },
+ {
+  "name": "hf-port-5-seq",
+  "frames": 60,
+  "grey_max": 20.0,
+  "grey_frame": 53,
+  "rewind": 13.3,
+  "rewind_cell": [
+   7,
+   6
+  ],
+  "return": 0.11
+ },
+ {
+  "name": "hf-return",
+  "frames": 72,
+  "grey_max": 1.1,
+  "grey_frame": 6,
+  "rewind": 2.2,
+  "rewind_cell": [
+   1,
+   6
+  ],
+  "return": -0.2
+ },
+ {
+  "name": "hf-reverse",
+  "frames": 72,
+  "grey_max": 1.5,
+  "grey_frame": 39,
+  "rewind": 8.6,
+  "rewind_cell": [
+   8,
+   3
+  ],
+  "return": -0.07
+ },
+ {
+  "name": "hf-sail",
+  "frames": 72,
+  "grey_max": 0.0,
+  "grey_frame": 35,
+  "rewind": 0.5,
+  "rewind_cell": [
+   9,
+   7
+  ],
+  "return": -0.14
+ },
+ {
+  "name": "hf-sample",
+  "frames": 72,
+  "grey_max": 0.5,
+  "grey_frame": 60,
+  "rewind": 1.1,
+  "rewind_cell": [
+   10,
+   8
+  ],
+  "return": -0.26
+ },
+ {
+  "name": "hf-ship",
+  "frames": 72,
+  "grey_max": 0.1,
+  "grey_frame": 25,
+  "rewind": 7.6,
+  "rewind_cell": [
+   1,
+   5
+  ],
+  "return": -0.3
+ },
+ {
+  "name": "hf-sort",
+  "frames": 72,
+  "grey_max": 1.0,
+  "grey_frame": 41,
+  "rewind": 4.1,
+  "rewind_cell": [
+   6,
+   3
+  ],
+  "return": -0.21
+ },
+ {
+  "name": "hf-store",
+  "frames": 72,
+  "grey_max": 4.9,
+  "grey_frame": 65,
+  "rewind": 0.0,
+  "rewind_cell": [
+   7,
+   4
+  ],
+  "return": -0.27
+ },
+ {
+  "name": "hf-unload-crew",
+  "frames": 72,
+  "grey_max": 1.3,
+  "grey_frame": 37,
+  "rewind": 5.1,
+  "rewind_cell": [
+   9,
+   4
+  ],
+  "return": -0.26
+ },
+ {
+  "name": "hf-unload-fish",
+  "frames": 72,
+  "grey_max": 6.5,
+  "grey_frame": 71,
+  "rewind": 0.8,
+  "rewind_cell": [
+   7,
+   0
+  ],
+  "return": -0.47
+ },
+ {
+  "name": "hf-unload-shrimp",
+  "frames": 72,
+  "grey_max": 1.3,
+  "grey_frame": 34,
+  "rewind": 5.1,
+  "rewind_cell": [
+   9,
+   4
+  ],
+  "return": -0.26
+ },
+ {
+  "name": "hf-wash",
+  "frames": 72,
+  "grey_max": 5.0,
+  "grey_frame": 71,
+  "rewind": 0.6,
+  "rewind_cell": [
+   6,
+   3
+  ],
+  "return": -0.25
+ }
+]

@@ -53,7 +53,9 @@ export function ScrubStage({ chapters }: { chapters: ChapterDef[] }) {
           )
         return (
           <img
-            key={i}
+            // keyed by picture, not index: after a path switch a reused <img> kept the other path's poster (scrub.ts only
+            // sets an empty src), so farmed "Paperwork" showed the port and farmed 01 opened on the boat (#311, #314)
+            key={`${i}:${m.kind === 'video' ? m.id : m.poster}`}
             data-seg={i}
             className={m.kind === 'dom' ? 'stage__layer stage__dom' : 'stage__layer'}
             // the source is set by scrub.ts once AVIF support is known: every poster under the intro (#preload), else lazily

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { SEQ } from '../src/film/manifest'
 import { open } from './helpers'
 
 /**
@@ -9,6 +10,9 @@ import { open } from './helpers'
 const STEP = 40
 const MIN_SAMPLES = 15
 const MIN_RATE = 0.15
+/** frame sets thinned to fit the path budget still span the whole take: seconds of source, not frames / 24 */
+const TAKE_S: Record<string, number> = { 'hf-fish-cut': 2.04, 'hf-peel': 1.79 }
+const sourceTime = (id: string, t: number) => (SEQ[id] ? (t / (SEQ[id].frames / 24)) * (TAKE_S[id] ?? 3) : t)
 
 for (const path of ['#ocean', '#pond']) {
   test(`every scene advances at least ${MIN_RATE} s per 100 px ${path}`, async ({ browser }) => {
@@ -40,7 +44,7 @@ for (const path of ['#ocean', '#pond']) {
       if (!s.id) continue
       const key = `${s.chapter}:${s.id}`
       if (!scenes.has(key)) scenes.set(key, [])
-      scenes.get(key)!.push({ y, t: s.target })
+      scenes.get(key)!.push({ y, t: sourceTime(s.id, s.target) })
     }
     const report = [...scenes].map(([key, xs]) => {
       const px = xs[xs.length - 1].y - xs[0].y

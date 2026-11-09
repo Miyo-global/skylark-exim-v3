@@ -69,6 +69,8 @@ export function Loader({ mounted, gate }: { mounted: Promise<void>; gate: Gate }
       // the static copy only gives way once the page it hands over to is mounted
       void whenMounted.then(() => {
         document.getElementById('hero-static')?.remove()
+        // /story's static first frame (#309): the stage has drawn the same frame by now; two frames on, so no gap
+        requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('first-frame')?.remove()))
         store.setState({ revealed: true })
       })
     }

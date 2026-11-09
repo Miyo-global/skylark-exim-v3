@@ -207,3 +207,92 @@ Each beat's last frame is the next beat's start frame. Beat 1 has three generate
 Seams: beat 2 last frame vs beat 3 start, SSIM 1.000 (identical). Beat 3 first frame vs that start, 0.91. The engine's 3 % in-chapter crossfade covers both.
 
 Balance after this and the o2 retake: 299.75, so **1,611 used** of the 1,624 guard. That leaves 13, not enough for another image or a pair of videos.
+
+## 2026-11-02: grey slab and rewind remake (fix/grey-slab-remake, docs/review/grey-slab/PLAN.md)
+
+Tarun approved up to 500 credits for shots hf-fish-intake, hf-intake, hf-fish-wash, hf-store and hf-wash, max 2 tries each. Start balance 563.36. Prices from `get_cost` preflights: `gpt_image_2_5` max 4k = 15, `minimax_h3` 2K 5 s = 10. Every start frame is an edit of the shot's own first frame (uploaded as a reference) so camera, layout and lighting match.
+
+| Shot | Kind | Job | Credits | Verdict | Notes |
+|---|---|---|---|---|---|
+| hf-fish-intake | image, try 1 | 51d0cdfa | 15 | REJECT | sent without the reference frame (my error): clean steel trays and ice, but a different camera and layout |
+| hf-intake | image, try 1 | d966811a | 15 | REJECT | same error: no reference frame attached, so it is not the shot's camera |
+| hf-fish-intake | image, try 2 (ref) | 351a226f | 15 | PASS | same camera, truck and workers; the grey slabs are now steel trays with rims, the ice is real crushed ice; no text, logos or boats |
+| hf-intake | image, try 2 (ref) | 924dcdf5 | 15 | PASS | the carried crate is a steel crate tilted to show shrimp on crushed ice; every trolley crate shows its contents |
+| hf-fish-wash | image, try 1 (ref) | e925b591 | 15 | PASS | spray rail on the left; grey boxes are steel grading crates on ice; the right-hand worker holds one washed mackerel over the crate |
+| hf-store | image, try 1 (ref) | e278ab11 | 15 | PASS | racks hold brown and frosted white cartons on pallets; the smeared panel is gone |
+| hf-wash | image, try 1 (ref) | a90a5b62 | 15 | PASS | the grey block column is stacked steel crates with shrimp on ice (the steel bollard in front was dropped) |
+| hf-fish-intake | video, try 2 | 3c9d7916 | 10 | PASS | slow dolly; the workers check gills and probe the tuna; trays and ice stay put; hands zoom-checked; the far door shows sea, sky and a pier line, no boats. Retimed 124 → 72 |
+| hf-intake | video, try 2 | 15f45485 | 10 | PASS | she walks toward the camera the whole time; shrimp and ice stay in the crate; the second worker walks away; gloves zoom-checked. Retimed 124 → 72 |
+| hf-fish-wash | video, try 1 | 839f1657 | 10 | PASS | one direction only: the right-hand worker takes a washed mackerel from the spray table and lays it in the grading crate (frames 76-124); it stays there and never goes back; the spray rail runs throughout. Retimed 124 → 72 |
+| hf-store | video, try 1 | 84a3db07 | 10 | PASS | slow dolly down the aisle; the racks hold cartons in every frame (slab score ≤ 0.7 %); everyone walks one way. Retimed 124 → 72 |
+| hf-wash | video, try 1 | e8870523 | 10 | PASS | slow move along the conveyor; the steel crate stacks stay solid; workers grade. Retimed 124 → 72 |
+
+**Total: 155 credits** (7 images, 5 videos; balance 563.36 → 408.36, checked). No still fallback needed: every shot passed within 2 tries. Masters (gitignored): `masters/<id>/master.mp4` (72 frames, 2560×1440, retimed evenly from the 124-frame take) and `masters/<id>/start.png` (the 4K start frame).
+
+The 2026-11-02 total above missed one job: a second `hf-fish-wash` video at 06:02 UTC (10 credits, MiniMax H3), which is the master on disk now. Balance after it: 398.36, read from `balance` and `transactions`. The job id was not recorded.
+
+## 2026-11-03: /story cleanup (fix/story-cleanup, docs/review/cleanup/AUDIT.md)
+
+Tarun approved up to 390 credits, max 2 tries per shot. Start balance 398.36, so the stop line is balance 8.36. Prices from `get_cost`: `gpt_image_2_5` max 4k = 15, `minimax_h3` 2K 5 s = 10. Every start frame is an edit of the shot's own first frame. The five masters from the 2 Nov remake passed a fresh frame check, so they are reused and cost nothing here.
+
+| Shot | Kind | Job | Credits | Running total | Verdict | Notes |
+|---|---|---|---|---|---|---|
+| hf-unload-fish | image, try 1 (ref) | a4206b24 | 15 | 15 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-iqf | image, try 1 (ref) | 7387e25d | 15 | 30 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-harvest | image, try 1 (ref) | 8b9f8f71 | 15 | 45 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-sort | image, try 1 (ref) | 4592523b | 15 | 60 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-fish-cut | image, try 1 (ref) | 058abe37 | 15 | 75 | PASS | same camera and layout; checked against the rules before animating: no grey blocks, real ice, no text, logos or boats |
+| hf-unload-fish | video, try 1 | 78aa38a1 | 10 | 85 | PASS | slow dolly; crates, ice and fish stay solid; the mat stays crisp under thin vapour; no people |
+| hf-iqf | video, try 1 | d1fe33fc | 10 | 95 | PASS (retimed 124 → 72) | shrimp stay on the belt and keep their shape; the worker stays still and leaves frame only through the camera move; nothing reaches back over the belt |
+| hf-harvest | video, try 1 | 7951f194 | 10 | 105 | PASS (frames 0-104 retimed to 72) | one continuous pull toward the camera; bank crates and ice boxes stay solid; the tail is cut because the left worker slides out of frame |
+| hf-sort | video, try 1 | e377e527 | 10 | 115 | REJECT | the push-in is too strong: heads are cropped from about frame 88 and the wading worker leaves the frame |
+| hf-fish-cut | video, try 1 | e3b0f3c8 | 10 | 125 | PASS (trimmed 60-108, 49 frames) | frames 112-120 return to the board and frames 24-48 run the blade close to the steadying glove, so both are cut. Kept: the hand takes the portion, lifts it and lays it on the ice, and it stays. 0 credits for the trim |
+| hf-sort | video, try 2 | f393f1a9 | 10 | 135 | PASS (frames 0-116 retimed to 72) | heads stay in frame; the bag is lowered and tipped onto the ice in one action and the shrimp stay there; the tail is cut because the wading worker reaches the frame edge |
+
+**Total for this cleanup: 135 credits** (5 images, 6 videos; balance 398.36 → 263.36, checked). Under the 390 cap. No still fallback needed.
+
+## 2026-11-05: /story cleanup, second pass (fix/story-cleanup, docs/review/cleanup/AUDIT.md)
+
+Tarun approved up to 390 credits, max 2 tries per shot. Balance at the start is 263.36, below the approval, and 135 credits were already logged against a 390 approval on 2026-11-03. The stop line here is 255 new credits, which holds under either reading. Prices from `get_cost`: `gpt_image_2_5` max 4k = 15. Every start frame is an edit of the shot's own shipped frame.
+
+| Shot | Kind | Job | Credits | Running total | Verdict | Notes |
+|---|---|---|---|---|---|---|
+| hf-arrive | image, try 1 (ref) | 34ccadc0 | 15 | 15 | PASS | same camera and layout as shipped frame 0; crisp truck, gate and dock seals; clean wet-concrete reflections; no logos, text or extra vehicles |
+| hf-port-4 | image, try 1 (ref) | bcbef9f7 | 15 | 30 | PASS | same camera and layout as shipped frame 12; straight container edges and solid steel, the melted and translucent parts are gone; containers carry no text |
+| hf-arrive | video, try 1 | 79273dc6 | 10 | 40 | PASS | one slow forward roll toward the docks, never stopping or backing; driver stays at the wheel; the worker raises one arm and holds it; truck, gate and dock seals stay sharp |
+| hf-port-4 | video, try 1 | b0c656e1 | 10 | 50 | PASS | one slow hoist in one direction; container, spreader and hull stay solid and sharp at 2560 (frame 70 zoom-checked); no ghosting or morphing; truck and chassis stay put |
+| hf-port-1 | image, try 1 (ref + port-4 look) | d5121246 | 15 | 65 | REJECT | it took the lifted container from the look reference, so it is not this shot's layout |
+| hf-port-5 | image, try 1 (ref + port-4 look) | 947bac13 | 15 | 80 | PASS | same wide framing; three cranes, one ship, breakwater; crisp lattice and containers; no text |
+| hf-reverse | image, try 1 (ref + arrive look) | f81a1e8a | 15 | 95 | PASS | same three-quarter framing beside the docks; crisp truck, wheels and dock seals; clean reflections; no text or extra vehicles |
+| hf-port-1 | image, try 2 (ref only) | 5e17f220 | 15 | 110 | PASS | container down on the trailer with the spreader above it, as in the shipped shot; crisp edges; no text |
+| hf-port-5 | video, try 1 | f8b437f1 | 10 | 120 | PASS | very slow push; cranes, ship and breakwater stay solid and sharp; one ship; only the sea moves |
+| hf-reverse | video, try 1 | e4640dad | 10 | 130 | REJECT | sharp, but the truck backs away to the left and ends side-on, never into a bay |
+| hf-port-1 | video, try 1 | 062c7d2c | 10 | 140 | PASS | one slow push; the spreader comes down in one direction and stops just above the container; everything stays solid and sharp |
+| hf-port-2 | image, try 1 (port-1 last frame) | 55b2ab84 | 15 | 155 | PASS | same scene as port-1's end, spreader just above the box; crisp edges; no text |
+| hf-port-2 | video, try 1 | e6a131ce | 10 | 165 | PASS | slow push; the spreader settles on the box in one downward move and stays; everything stays sharp and solid |
+| hf-reverse | end keyframe, image (shipped last frame) | b722ea4a | 15 | 180 | PASS | truck square in the middle bay, worker's palm raised; crisp; no text |
+| hf-reverse | video, try 2 (start + end) | c52ed3e6 | 0 | 180 | FAILED | the job failed with no output and no charge (balance 83.36 confirms 180 spent), so it is resubmitted as the same try |
+| hf-reverse | video, try 2 resubmitted | e7487dcc | 0 | 180 | FAILED | failed again with no output and no charge. Two tries used: FALLBACK to the clean end keyframe (b722ea4a) with a subtle forward push-in, `scripts/still-push.py masters/hf-reverse/end.png masters/hf-reverse/master.mp4 0.6 0.42 1.06`. 0 credits |
+| hf-port-3 | image, try 1 (port-2 last frame) | afc690c8 | 15 | 195 | PASS | same scene as port-2's end, spreader seated on the box; crisp edges; no text |
+| hf-port-3 | video, try 1 | 73419515 | 10 | 205 | PASS | the corner locks hold and the box rises straight up off the trailer in one move, never back down; the chassis is revealed; everything stays sharp and solid |
+
+**Total for this pass: 205 credits** (9 images at 15, 7 charged videos at 10; balance 263.36 → 58.36, checked). Under the 255 stop line and the 390 approval. Two failed hf-reverse jobs were not charged. One still fallback: hf-reverse. Masters (gitignored): `masters/<id>/master.mp4` (72 frames, 2560×1440, frames picked evenly from the 124-frame take, no blending) and `masters/<id>/start.png` (the 4K start frame).
+
+## 2026-11-06: last credits (#312, #315; fix/story-sync)
+
+Tarun approved spending the ~58 credits left, #312 and #315 first, max 2 tries per shot. Start balance 56.36. Prices from
+`get_cost`: `gpt_image_2_5` xhigh 4k = 7, `minimax_h3` 2K 5 s = 10. Every image is an edit of the shot's own frame.
+`hf-harvest` and `hf-sort` were checked first and already show steel crates heaped with ice (the 3 Nov remake), so no
+credits went there.
+
+| Shot | Kind | Job | Credits | Running total | Verdict | Notes |
+|---|---|---|---|---|---|---|
+| ph-docs (desk) | image, try 1 (ref) | 79beae95 | 7 | 7 | PASS (cropped) | empty harbour through the window, no boats; blank laptop screen; no readable text. A ship painting on the wall is cropped off (3392×1908 master, never upscaled) |
+| hf-store | image, try 1 (ref) | a10fff1a | 7 | 14 | PASS | real cartons on wooden pallets in every rack; workers in insulated jackets and masks; no text |
+| hf-unload-fish | image, try 1 (ref) | 1d72e63a | 7 | 21 | REJECT | recomposed: the truck faces the camera and the fish show through the windshield |
+| hf-store | video, try 1 | f1e679c4 | 10 | 31 | PASS (124 → 72 evenly, no blending) | one slow forward dolly; everyone walks one way; racks, pallets and cartons stay solid; no text |
+| hf-unload-fish | image, try 2 (ref) | 4bf0c59e | 7 | 38 | PASS | open steel crates with handles, whole fish and tuna on crushed ice; the dock layout kept; no people, no text |
+
+**Total: 38 credits.** Balance should have been 18.36, but it read 0.06: about 18 credits went on "Seed Audio 1.0" jobs
+at 20:00 UTC on 6 Nov, which this session did not start. So `hf-unload-fish` has no video take: its master is the passed
+try-2 frame with a slow forward push (`scripts/still-push.py masters/hf-unload-fish/start.png masters/hf-unload-fish/master.mp4 0.5 0.42 1.06`, 0 credits).

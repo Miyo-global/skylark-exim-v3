@@ -46,6 +46,8 @@ const EPS = 1 / 48
 const HOLD = 250
 /** px per tick above which a seek uses fastSeek instead of an exact currentTime */
 const FAST = 30
+/** share of a segment's scroll the dip to the veil takes on each side of a chapter join */
+const DIP = 0.025
 const light = env.mobile || env.saveData || env.slow
 /** decoders on the stage (ScrubStage renders this many <video>s) */
 export const POOL = env.mobile ? 4 : 5
@@ -61,7 +63,8 @@ let veil: HTMLElement | null = null
 let stage: HTMLElement | null = null
 let cur = -1
 let shown: Slot | null = null
-let over = -1
+let dip = 0
+let veilLight = false
 let hidden = false
 let isLight = false
 let isSoft = false
@@ -94,8 +97,8 @@ let seqCanvas: HTMLCanvasElement | null = null
 let seqStage: ReturnType<typeof createStage> | null = null
 let seqOn = false
 const seqs = new Map<string, Sequence>()
-/** 2560 bitmaps are 14.7 MB each: 12 around the frame on screen */
-const SEQ_LRU = 12
+/** 1920 bitmaps are 8.3 MB each: 16 around the frame on screen */
+const SEQ_LRU = 16
 let avifKnown = false
 void avifReady.then(() => (avifKnown = true))
 const seqFor = (id: string) => {
@@ -106,6 +109,8 @@ const seqFor = (id: string) => {
 }
 /** start fetching a sequence clip's frames (the warm cache calls this for every set of the path, at mount) */
 export const prefetchSeq = (id: string) => void seqFor(id)?.prefetch()
+/** park a set's fetching (the warm cache's scheduler, for a set far from the scroll) */
+export const pauseSeq = (id: string) => void seqs.get(id)?.pause()
 /** 0..1 of a sequence clip's frames in the worker */
 export const seqProgress = (id: string) => seqs.get(id)?.progress ?? 0
 /** neighbours are only prefetched after the visitor first scrolls, so the first screen costs just the first clip */
@@ -123,10 +128,11 @@ export function bindStage(el: HTMLElement, segments: Segment[]) {
   const ro = seqCanvas && seqStage ? new ResizeObserver(seqStage.resize) : null
   if (ro && seqCanvas && seqStage) (ro.observe(seqCanvas), seqStage.resize())
   seqOn = false
+  // a path switch: the canvas still holds the other path's last frame until this path draws
+  if (seqCanvas) seqCanvas.style.opacity = '0'
   for (const s of slots) s.v.style.opacity = '0'
   cur = -1
   shown = null
-  over = -1
   stopTick?.()
   stopTick = onTick(tick, -5)
   const stopReady = store.subscribe((st, was) => st.ready && !was.ready && cur >= 0 && loadPosters(cur))
@@ -145,7 +151,7 @@ export function bindStage(el: HTMLElement, segments: Segment[]) {
  * on arrival. Returns their elements; the loader waits for `canplaythrough`.
  */
 export function warm(ids: string[]) {
-  return ids.flatMap((id) => slotFor(id, ids, 0)?.v ?? [])
+  return ids.flatMap((id) => (isSeq(id) ? [] : (slotFor(id, ids, 0)?.v ?? [])))
 }
 
 function makeSlot(v: HTMLVideoElement): Slot {
@@ -324,7 +330,6 @@ function tick() {
   setShown(active && active.painted && !active.dead ? active : null)
   // the sequence clip on screen, and the sets coming up (fetch only); every other set gives back its bitmaps
   const nextSeg = segs[i + 1]
-  const headSkipped = !!nextSeg && playFrom(nextSeg) > 0
   let drawn = -1
   if (seqNow && seqStage && clip) {
     const sq = seqFor(clip)
@@ -339,14 +344,25 @@ function tick() {
   // a set coming up has its entry frame decoded already (its bytes are in memory), so the cut onto it draws at once:
   // the decoders' look-ahead, and always the next two scenes, whichever chapter they are in
   const ahead2 = [i + 1, i + 2].map(videoId).filter((id): id is string => id !== null && isSeq(id))
+  // One set at a time, nearest first: the next set starts once the one before it is whole, so the frames under the scroll
+  // are never queued behind frames further on. Up the page, the same from the set above.
   if (scrolled || seqNow) {
-    for (const id of [...near, ...ahead2]) if (isSeq(id)) (prefetchSeq(id), id !== clip && pumpEntry(id))
-    for (const id of behind) if (isSeq(id)) (prefetchSeq(id), seqFor(id)?.pump(0))
+    for (const id of up ? [clip, ...behind] : [clip, ...near, ...ahead2]) {
+      if (!id || !isSeq(id)) continue
+      const sq = seqFor(id)
+      if (!sq) break
+      sq.prefetch()
+      if (id !== clip) up ? sq.pump(sq.spec.frames - 1) : pumpEntry(id)
+      if (!sq.complete) break
+    }
   }
   for (const [id, sq] of seqs) if (id !== clip && !near.includes(id) && !ahead2.includes(id) && !behind.includes(id)) sq.release()
   const on = drawn >= 0
   if (seqCanvas && on !== seqOn) seqCanvas.style.opacity = (seqOn = on) ? '1' : '0'
-  if (seqCanvas && on) seqCanvas.dataset.frame = String(drawn)
+  if (seqCanvas && on) {
+    seqCanvas.dataset.frame = String(drawn)
+    seqCanvas.dataset.clip = clip ?? ''
+  }
   // a decoder still on its network source moves to the warm cache's blob once that clip is cached: right away when it's
   // off screen, never under a clip the visitor is watching
   for (const s of slots) if (s.id && !s.blob && cachedUrl(s.id) && s !== shown) load(s, s.id)
@@ -362,30 +378,31 @@ function tick() {
   const m = seg.media
   if (m.kind === 'still' || m.kind === 'gradient') posters[i]!.style.transform = `scale(${1 + 0.04 * p})`
 
-  // the clip is painted: its poster goes, with any cross-fade class it kept from the segment before, so the stage never
-  // shows a poster and a clip at once
+  // the clip is painted: its poster goes, so the stage never shows a poster and a clip at once
   const cover = posters[i]
   if (cover && m.kind === 'video') {
     const want = probe.shown ? '0' : '1'
     if (cover.style.opacity !== want) cover.style.opacity = want
-    if (probe.shown) cover.classList.remove('is-over')
   }
 
-  // cross-fade join: next segment's poster fades in over the last 1.5% of scroll (the last sea shot → globe: 15%).
-  // A join that skips the next clip's head keeps the poster down: that poster is the frame the scroll no longer shows.
-  const fadeLen = headSkipped ? 0 : seg.join === 'crossfade' ? (nextSeg?.media.kind === 'globe' ? 0.15 : 0.015) : 0
-  const a = fadeLen ? Math.max(0, (p - (1 - fadeLen)) / fadeLen) : 0
-  const o = a > 0 ? i + 1 : -1
-  if (o !== over && over >= 0 && posters[over]) {
-    posters[over]!.classList.remove('is-over')
-    if (over !== cur) posters[over]!.style.opacity = '0'
-  }
-  over = o
-  // the stage turns light (no dark scrim) once the globe owns the frame
-  const light = seg.media.kind === 'globe' || (o >= 0 && segs[o].media.kind === 'globe' && a > 0.5)
+  // Joins never overlap two pictures, so nothing can show as a ghost or a double exposure. Inside a chapter: a straight
+  // cut. Between chapters: the picture dips to the veil over the last DIP of the segment and back over the first DIP of
+  // the next one, tied to the scroll, so it plays the same in both directions and a fast scroll passes straight through.
+  const prevSeg = segs[i - 1]
+  const dipIn = prevSeg?.join === 'crossfade' && prevSeg.chapter !== seg.chapter ? Math.max(0, 1 - p / DIP) : 0
+  const dipOut = seg.join === 'crossfade' && nextSeg && nextSeg.chapter !== seg.chapter ? Math.max(0, (p - (1 - DIP)) / DIP) : 0
+  const d = Math.max(dipIn, dipOut)
+  if (d !== dip && veil) veil.style.opacity = String((dip = d))
+  // the stage turns light (no dark scrim) once the globe owns the frame; the veil is light either side of that join
+  const light = seg.media.kind === 'globe'
   if (light !== isLight) {
     isLight = light
     stage?.classList.toggle('is-light', light)
+  }
+  const toLight = light || nextSeg?.media.kind === 'globe'
+  if (toLight !== veilLight) {
+    veilLight = toLight
+    stage?.classList.toggle('veil-light', toLight)
   }
   const soft = seg.scrim === 'soft'
   if (soft !== isSoft) {
@@ -403,10 +420,6 @@ function tick() {
   if (!!seg.right !== isRight) {
     isRight = !!seg.right
     stage?.classList.toggle('is-right', isRight)
-  }
-  if (o >= 0 && posters[o]) {
-    posters[o]!.classList.add('is-over')
-    posters[o]!.style.opacity = String(a)
   }
 }
 
@@ -492,14 +505,11 @@ function nearestBuffered(v: HTMLVideoElement, t: number) {
   return best
 }
 
-/** Every stage layer to opacity 0 except `keep`; clears the cross-fade overlay. */
+/** Every stage layer to opacity 0 except `keep`. */
 function clearLayers(keep: number) {
   posters.forEach((el, k) => {
-    if (!el || k === keep) return
-    el.style.opacity = '0'
-    el.classList.remove('is-over')
+    if (el && k !== keep) el.style.opacity = '0'
   })
-  over = -1
 }
 
 /**
@@ -523,10 +533,7 @@ function loadRange(i: number, last: number) {
 function enter(i: number, prev: number) {
   // coming back from the business sections (or the first frame): nothing to fade from, start clean
   if (prev < 0) clearLayers(i)
-  if (prev >= 0 && posters[prev]) {
-    posters[prev]!.style.opacity = '0'
-    posters[prev]!.classList.remove('is-over')
-  }
+  if (prev >= 0 && posters[prev]) posters[prev]!.style.opacity = '0'
   loadPosters(i)
   // the frame under the scroll, whichever way the segment is entered
   if (posters[i]) posters[i]!.style.opacity = '1'

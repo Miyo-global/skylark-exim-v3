@@ -6,8 +6,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ids=("$@"); [ ${#ids[@]} -gt 0 ] || ids=($(cd masters && ls -d */ | tr -d /))
 for id in "${ids[@]}"; do POSTERS=only scripts/encode-hf.sh "$id"; done
-# the documentation backdrop: its 3840×2160 master, blurred as before (1 px at 1280), centred
-[ -f masters/ph-docs.png ] && STILL=masters/ph-docs.png CX=0.74 BLUR=1 POSTER_2560=1 ID=ph-docs-blur OUT=public/media python3 scripts/stills.py
+# the documentation backdrop (#315): its 3392×1908 master, sharp (no blur), centred on the laptop
+[ -f masters/ph-docs.png ] && STILL=masters/ph-docs.png CX=0.73 POSTER_2560=1 ID=ph-docs-blur OUT=public/media python3 scripts/stills.py
 printf '%s\n' "${ids[@]}" | xargs -P "${JOBS:-2}" -I{} env POSTERS=no scripts/encode-hf.sh {}
 for c in av1 hevc; do
   read -r top why < <(node --import tsx scripts/clip-manifest.ts top $c)

@@ -158,13 +158,15 @@ export class Sequence {
    */
   pump(i: number, decode = true) {
     if (this.stopped) return
+    // the way the scroll is going: decoded first on that side
+    const dir = i < this.at ? -1 : 1
     this.at = i
     const free = () => PARALLEL - this.fetching.size - this.decoding.size
     // decode first: a cached frame near the scroll position is one message away from being drawable
     // (a prefetch only fetches: no bitmaps for a set that is not on screen)
     if (decode)
     for (let d = 0; d < this.lru / 2 && free() > 0; d++)
-      for (const j of d === 0 ? [i] : [i - d, i + d])
+      for (const j of d === 0 ? [i] : [i + dir * d, i - dir * d])
         if (j >= 0 && j < this.spec.frames && this.cached.has(j) && !this.bitmaps.has(j) && !this.decoding.has(j) && free() > 0) {
           this.decoding.add(j)
           send({ k: 'decode', seq: this.spec.id, i: j, url: this.spec.url(j) })
@@ -229,6 +231,11 @@ export class Sequence {
     this.pump(this.at, false)
   }
 
+  /** Stop starting new fetches (in-flight ones finish); prefetch() resumes. The warm cache parks far sets with it. */
+  pause() {
+    this.auto = false
+  }
+
   /** Close every decoded bitmap (the bytes stay in the worker): a set off screen holds no bitmap memory (#hd2). */
   release() {
     for (const b of this.bitmaps.values()) b.close()
@@ -267,6 +274,7 @@ export function createStage(canvas: HTMLCanvasElement) {
   let h = 0
   let shown = -1
   let last = ''
+  let owner: Sequence | null = null
 
   const resize = () => {
     const next = [Math.round(canvas.clientWidth * dpr()), Math.round(canvas.clientHeight * dpr())]
@@ -302,8 +310,10 @@ export function createStage(canvas: HTMLCanvasElement) {
       pos.next.pump(j)
       into = fade > 0 ? close(pos.next.nearest(j), j) : null
     }
-    if (!now && !into) return shown
-    const stamp = `${now?.at ?? -1}:${into?.at ?? -1}:${fade.toFixed(3)}`
+    // nothing of this set decoded yet: -1, so the stage shows the poster rather than the last set's picture
+    if (!now && !into) return owner === pos.seq ? shown : -1
+    owner = pos.seq
+    const stamp = `${pos.seq.spec.id}:${now?.at ?? -1}:${into?.at ?? -1}:${fade.toFixed(3)}`
     if (stamp === last) return shown
     last = stamp
     if (now) paint(now.bitmap, 1)

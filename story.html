@@ -17,7 +17,8 @@
     <link rel="preload" href="/fonts/inter-tight-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/instrument-serif-latin-400-italic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/inter-tight-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-48.webp" type="image/webp" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <style>
       /* critical: the loader and the hero copy paint before any JS. The mark sits in the header band above the copy (#219: it
          clears the copy on short laptops too), and the copy stays on top of the loader (#207): Chrome ignores occluded text for LCP, so hidden copy would wait for the reveal. */
@@ -35,10 +36,17 @@
       @keyframes loader-thin{from{background-color:#071f26}to{background-color:rgba(7,31,38,.84)}}
       @keyframes loader-out{to{opacity:0;visibility:hidden}}
       @media (prefers-reduced-motion:reduce){.loader{display:none}}
+      /* #309: on /story the intro thins to a light veil over the opening frame (#first-frame), so the first chapter is on screen at once */
+      @keyframes loader-thin{from{background-color:rgba(7,31,38,.9)}to{background-color:rgba(7,31,38,.38)}}
       /*static-hero-css*/
       /*static-caption-css*/
     </style>
     <title>Our story: from sea and pond to port | Skylark Exim</title>
+    <script>
+      /* the film always opens on chapter 1's first frame: no browser scroll restore on reload, even before the app loads */
+      history.scrollRestoration = 'manual'
+      addEventListener('pagehide', function (e) { if (!e.persisted) scrollTo(0, 0) })
+    </script>
   </head>
   <body>
     <div id="root"></div>

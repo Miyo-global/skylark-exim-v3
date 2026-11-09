@@ -395,7 +395,8 @@ for (const [name, prof] of Object.entries(PROFILES)) {
       expect(slots, '__scrubSlots').not.toBeNull()
       expect(slots.length, 'decoder pool').toBe(prof.mobile ? 4 : 5)
       for (const s of slots) expect(Object.keys(s).sort()).toEqual(['dead', 'id', 'painted', 'ready', 'readyState'])
-      expect(slots.find((s) => s.id === 'hf-ponds')?.readyState, 'first clip decoded').toBeGreaterThanOrEqual(2)
+      // a desktop opens on the frame set, not a decoder
+      if (prof.mobile) expect(slots.find((s) => s.id === 'hf-ponds')?.readyState, 'first clip decoded').toBeGreaterThanOrEqual(2)
     })
   })
 }

@@ -4,6 +4,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/:section(products|about|contact){.html}?", "destination": "/#:section", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/story", "destination": "/story.html" },
     { "source": "/quote", "destination": "/quote.html" },
