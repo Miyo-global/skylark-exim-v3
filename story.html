@@ -42,6 +42,11 @@
       /*static-caption-css*/
     </style>
     <title>Our story: from sea and pond to port | Skylark Exim</title>
+    <script>
+      /* the film always opens on chapter 1's first frame: no browser scroll restore on reload, even before the app loads */
+      history.scrollRestoration = 'manual'
+      addEventListener('pagehide', function (e) { if (!e.persisted) scrollTo(0, 0) })
+    </script>
   </head>
   <body>
     <div id="root"></div>
