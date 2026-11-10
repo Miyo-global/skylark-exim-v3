@@ -28,7 +28,7 @@ void main(){
   }else{
     float t=(uT-${FALL.toFixed(2)})/${SPREAD.toFixed(2)};
     float e=1.-pow(1.-min(t,1.),3.);
-    float R=uMax*e+.003*sin(atan(q.y,q.x)*3.+t*6.)*(1.-t);
+    float R=uMax*e;R+=.003*sin(atan(q.y,q.x)*3.+t*6.)*(1.-t)*smoothstep(.05,.3,R);
     hole=smoothstep(R-.03,R+.01,d);
     float fade=1.-smoothstep(.35,1.,t);
     float rings=exp(-pow((d-R)/.007,2.))*.55;
