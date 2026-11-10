@@ -5,7 +5,7 @@ import { MARKET_COORDS, ORIGIN } from '../config/markets'
  * The world card's thin-line globe (#268): an orthographic sphere turned to face the markets, its graticule, and an arc
  * from Visakhapatnam to every market in config/markets.ts. Plain SVG, so the card costs no three.js and no image.
  */
-const R = 100
+export const R = 100
 const LON0 = 70
 const LAT0 = 28
 const rad = Math.PI / 180
@@ -31,13 +31,15 @@ function line(pts: [number, number][]) {
   return d
 }
 const range = (a: number, b: number, step: number) => Array.from({ length: Math.floor((b - a) / step) + 1 }, (_, i) => a + i * step)
-const GRATICULE = [
+export const GRATICULE = [
   ...range(-180, 150, 30).map((lon) => line(range(-90, 90, 5).map((lat) => [lat, lon]))),
   ...range(-60, 60, 30).map((lat) => line(range(-180, 180, 5).map((lon) => [lat, lon]))),
 ]
 
 const [ox, oy] = project(ORIGIN.lat, ORIGIN.lon)
-const MARKERS = MARKET_COORDS.map((m) => {
+/** Visakhapatnam on the sphere's face: the hero's route globe (HeroRoute.tsx) draws the same arcs */
+export const ORIGIN_XY = [ox, oy] as const
+export const MARKERS = MARKET_COORDS.map((m) => {
   const [x, y] = project(m.lat, m.lon)
   // the arc bows away from the sphere's centre, more for the far markets
   const lift = 1 + Math.hypot(x - ox, y - oy) / (R * 2.2)

@@ -91,6 +91,9 @@ export function Loader({ mounted, gate }: { mounted: Promise<void>; gate: Gate }
       tl = gsap.timeline({ onComplete: handOff })
       tl.to(root.querySelector('.loader__name'), { autoAlpha: 0, y: -6, duration: 0.2, ease: 'power2.in' }, 0)
       tl.to(root.querySelectorAll('.loader__line, .loader__pct'), { autoAlpha: 0, duration: 0.2 }, 0)
+      // the homepage's static copy leaves with the intro: the hero brings its own in word by word (home/HomeHero.tsx)
+      const copy = document.getElementById('hero-static')
+      if (copy) tl.to(copy, { autoAlpha: 0, duration: WIPE_S }, 0)
       tl.to(root, { '--r': `${Math.hypot(innerWidth, innerHeight) / 2 + 2}px`, duration: WIPE_S, ease: 'power3.inOut' }, 0)
     }
     const pct = root.querySelector('.loader__pct')
