@@ -44,7 +44,7 @@ Every CG clip, finished and new, goes through `scripts/cg-grade.sh`, never its o
 - Pull the renders' teal/navy cast back: warm midtones and highlights so the dawn light carries across water and hull.
 - Shadows deep but neutral, not navy (cg-depart-1 frame 0 shadows: R14 G22 B28 before, R23 G25 B26 after).
 - Lift exposure on the boat: gamma 1.10, contrast 1.05.
-- Light sharpening at 2560 (Seedance HD is soft); desktop frame sets at AVIF crf 30 (`CRF=30`), not 39.
+- Light sharpening at 2560 (Seedance HD is soft); desktop frame sets at AVIF crf 32-36 (`CRF=30 SET_KB=2150`, about 2 MB a clip), not 39.
 - Caption shading sits only behind the caption text, neutral black (`stage.css` `.is-cg`), never a full-frame tint.
   Caption copy stays WCAG AA over the footage: `tests/story-caption-contrast.spec.ts`.
 
