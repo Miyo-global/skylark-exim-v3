@@ -115,6 +115,8 @@ export const pauseSeq = (id: string) => void seqs.get(id)?.pause()
 export const seqProgress = (id: string) => seqs.get(id)?.progress ?? 0
 /** neighbours are only prefetched after the visitor first scrolls, so the first screen costs just the first clip */
 let scrolled = false
+/** the visitor has scrolled since the page opened (the warm cache streams a wider window from then on) */
+export const hasScrolled = () => scrolled
 let stopTick: (() => void) | null = null
 
 export function bindStage(el: HTMLElement, segments: Segment[]) {
@@ -136,8 +138,9 @@ export function bindStage(el: HTMLElement, segments: Segment[]) {
   stopTick?.()
   stopTick = onTick(tick, -5)
   const stopReady = store.subscribe((st, was) => st.ready && !was.ready && cur >= 0 && loadPosters(cur))
-  // with the warm cache on, every poster of the path loads now, under the intro (#preload): the warm cache waits for them
-  if (enabled) void avifReady.then(() => loadRange(0, segs.length - 1))
+  // the first poster loads now, under the intro; the rest follow the scroll (loadPosters), so the first screen costs only
+  // the chapter it shows (perf/story-smooth-scroll)
+  if (enabled) void avifReady.then(() => loadRange(0, 0))
   return () => {
     ro?.disconnect()
     stopReady()
@@ -337,7 +340,9 @@ function tick() {
       const at = seqAt(p, sq.spec.frames, playUntil(seg), playFrom(seg))
       // a far decoded neighbour of a trimmed clip is the frame this join skips (the seated spreader, the chassis gone)
       const slack = playFrom(seg) > 0 || playUntil(seg) < 1 ? 2 : undefined
-      drawn = seqStage.draw({ seq: sq, at, slack })
+      // a clip trimmed with `until` never blends in a frame past its end (hf-ship: the placard after frame 28)
+      const last = playUntil(seg) < 1 ? Math.floor(seqAt(1, sq.spec.frames, playUntil(seg), playFrom(seg)) * (sq.spec.frames - 1)) : undefined
+      drawn = seqStage.draw({ seq: sq, at, slack, last })
       probe.target = sq.index(at) / 24
     }
   }
@@ -361,6 +366,7 @@ function tick() {
   if (seqCanvas && on !== seqOn) seqCanvas.style.opacity = (seqOn = on) ? '1' : '0'
   if (seqCanvas && on) {
     seqCanvas.dataset.frame = String(drawn)
+    seqCanvas.dataset.mix = String(seqStage?.mix ?? 0)
     seqCanvas.dataset.clip = clip ?? ''
   }
   // a decoder still on its network source moves to the warm cache's blob once that clip is cached: right away when it's
