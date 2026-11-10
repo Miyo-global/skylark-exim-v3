@@ -54,7 +54,7 @@ test('/story opens on the path\'s first clip at y = 0, with no hero, and the cli
     const c = document.querySelector<HTMLCanvasElement>('canvas.stage__seq')!
     return c.style.opacity === '1' ? [c.dataset.clip, Number(c.dataset.frame)] : null
   })
-  expect(shown?.[0]).toBe('hf-depart')
+  expect(shown?.[0]).toBe('cg-depart-1')
   expect(shown?.[1]).toBeGreaterThan(0)
 })
 

@@ -5,7 +5,7 @@ import { devices, expect, test, type Page } from '@playwright/test'
  * showing its own heading and Higgsfield clip.
  */
 const PATHS = {
-  ocean: { hash: '#ocean', toggle: 'Wild catch', chapter: 'o1', title: 'Before the harbour wakes.', clip: 'hf-depart' },
+  ocean: { hash: '#ocean', toggle: 'Wild catch', chapter: 'o1', title: 'Before the harbour wakes.', clip: 'cg-depart-1' },
   pond: { hash: '#pond', toggle: 'Farmed shrimp', chapter: 'p1', title: 'Partner farms on the Andhra coast.', clip: 'hf-ponds' },
 } as const
 

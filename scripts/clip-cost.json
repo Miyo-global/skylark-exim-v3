@@ -1,6 +1,5 @@
 {
   "opening": 2359,
-  "hf-depart": 4007,
   "hf-catch": 6434,
   "hf-ice": 5901,
   "hf-return": 4557,
@@ -31,5 +30,8 @@
   "hf-peel": 2177,
   "hf-lab": 1912,
   "hf-iqf": 4308,
-  "hf-pack": 1749
+  "hf-pack": 1749,
+  "cg-depart-1": 1723,
+  "cg-depart-2": 1757,
+  "cg-depart-3": 1596
 }

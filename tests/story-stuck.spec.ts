@@ -382,7 +382,7 @@ for (const [name, prof] of Object.entries(PROFILES)) {
         test.setTimeout(120_000)
         const r = await get(browser, hash, 'idle')
         hygiene(r, `idle ${hash}`, prof)
-        const want = hash ? ['hf-ponds'] : ['hf-depart']
+        const want = hash ? ['hf-ponds'] : ['cg-depart-1']
         save(`idle${hash}`, { loadstart: r.loadstart, lcp: Math.round(r.lcp), slots: r.slots })
         for (const id of want) expect.soft(r.loadstart[id], `${id} loadstart`).toBeGreaterThan(0)
         expect.soft(r.lcp, 'LCP (ms)').toBeLessThanOrEqual(2500)
