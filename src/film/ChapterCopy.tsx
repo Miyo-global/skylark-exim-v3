@@ -38,7 +38,7 @@ export function ChapterCopy({ chapter }: { chapter: ChapterDef }) {
   )
 }
 
-/** "The Ocean · 01" → a small serif numeral beside the chapter name (Mont-Fort chapter style). */
+/** "The Ocean · 01" → a small uppercase mono chapter label, number first: "01 · THE OCEAN" (the case is CSS, the text stays as written) */
 function Eyebrow({ text }: { text: string }) {
   const m = text.match(/^(.*?)\s*·\s*(\d{2})$/)
   return (
@@ -46,6 +46,7 @@ function Eyebrow({ text }: { text: string }) {
       {m ? (
         <>
           <span className="caption__num">{m[2]}</span>
+          <span aria-hidden="true">·</span>
           {m[1]}
         </>
       ) : (

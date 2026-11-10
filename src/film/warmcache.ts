@@ -2,7 +2,7 @@ import { decodeAll, storyReady } from '../engine/boot'
 import { env } from '../engine/env'
 import { frame, store, type Path } from '../engine/store'
 import { CLIPS, SEQ, type Clip } from './manifest'
-import { pauseSeq, prefetchSeq, seqProgress } from './scrub'
+import { hasScrolled, pauseSeq, prefetchSeq, seqProgress } from './scrub'
 import { W, avifReady, clipUrl, codec, codecReady, isSeq, served } from './segments'
 
 /**
@@ -18,8 +18,10 @@ import { W, avifReady, clipUrl, codec, codecReady, isSeq, served } from './segme
  * Desktop plays every story clip as a scroll-scrubbed canvas sequence (sequence.ts): coarse first, bounded decoded LRU,
  * one shared rAF. Phones keep the video. The homepage hero stays a looping MP4.
  */
-/** clips fetched at once (Terminal's concurrency): 6 desktop, 3 phone */
-const PARALLEL = env.mobile ? 3 : 6
+/** clips the cache fetches at once (a phone's clip is 1–2 MB: two at a time keep the one on screen first in line) */
+const VIDEO = 2
+/** px/s above which the stream reaches four chapters ahead */
+const FAST = 1500
 /** the clips the cache holds as Blobs: a desktop frame-sequence clip (#hd2) is the stage canvas's, not a video */
 const videos = (p: Path) => CLIPS[p].filter((c) => !isSeq(c.id))
 const frameSets = (p: Path) => CLIPS[p].filter((c) => isSeq(c.id))
@@ -185,58 +187,75 @@ async function run(p: Path) {
     opening = true
     emit()
   }
-  const queue = clips.filter((c) => !urls.has(c.id))
+  const fetching = new Set<string>()
   const fetchOne = async (c: Clip) => {
-    const res = await fetch(clipUrl(c.id), { signal: ctl.signal })
-    if (!res.ok) return
-    const blob = await res.blob()
-    if (ctl.signal.aborted) return
-    urls.set(c.id, URL.createObjectURL(blob))
-    emit()
-  }
-  // Frame sets nearest the scroll first (#story-direct). The chapter on screen and the next two in the direction of travel
-  // load together, each coarse first (every 32nd, 16th, 8th… frame, sequence.ts), so a fast scroll lands on a coarse frame
-  // of every chapter it reaches instead of a poster; everything else is parked (in-flight frames finish). Re-picked every
-  // 50 ms. With that window complete, the nearest remaining set loads. A set stuck for STALL (a failed frame) is passed
-  // over: the frames it does have still draw.
-  const sets = (async () => {
-    const list = frameSets(p)
-    const stalled = new Set<string>()
-    const last = new Map<string, { at: number; since: number }>()
-    const ahead = (c: Clip) => (c.chapter - Math.max(0, frame.index)) * (frame.dir < 0 ? -1 : 1)
-    // ahead of the scroll before behind it, nearest first, story order inside a chapter
-    const rank = (c: Clip) => (ahead(c) >= 0 ? ahead(c) * 2 : -ahead(c) * 2 + 1) * 100 + c.seg
-    while (!ctl.signal.aborted) {
-      const open = list.filter((c) => seqProgress(c.id) < 1 && !stalled.has(c.id))
-      if (!open.length) break
-      const win = open.filter((c) => ahead(c) >= 0 && ahead(c) <= 2)
-      // breadth first: every set in the window to its coarse level (the chapter on screen keeps loading throughout),
-      // then the window fills in
-      const thin = win.filter((c) => seqProgress(c.id) < COARSE)
-      const go = thin.length ? win.filter((c) => ahead(c) === 0 || thin.includes(c)) : win.length ? win : [open.sort((a, b) => rank(a) - rank(b))[0]]
-      const now = performance.now()
-      for (const c of open) {
-        if (!go.includes(c)) {
-          pauseSeq(c.id)
-          last.delete(c.id)
-          continue
-        }
-        prefetchSeq(c.id)
-        const at = seqProgress(c.id)
-        const l = last.get(c.id)
-        if (!l || l.at !== at) last.set(c.id, { at, since: now })
-        else if (now - l.since > STALL) stalled.add(c.id)
-      }
-      await sleep(50)
+    fetching.add(c.id)
+    try {
+      const res = await fetch(clipUrl(c.id), { signal: ctl.signal, priority: 'low' } as RequestInit)
+      if (!res.ok) return
+      const blob = await res.blob()
+      if (ctl.signal.aborted) return
+      urls.set(c.id, URL.createObjectURL(blob))
+      emit()
+    } finally {
+      fetching.delete(c.id)
     }
-  })()
-  await Promise.all([
-    pics,
-    sets,
-    ...Array.from({ length: PARALLEL }, async () => {
-      while (queue.length && !ctl.signal.aborted) await fetchOne(queue.shift()!).catch(() => {})
-    }),
-  ])
+  }
+  // Streaming (perf/story-smooth-scroll): nothing loads that the scroll is not about to reach. Before the first scroll,
+  // the opening chapter and the next chapter's first batch (its frame sets to their coarse level, its first clip); after
+  // it, the chapter on screen, the next two in the direction of travel and the one just passed. Frame sets go breadth
+  // first (every set in the window to its coarse level, then the window fills in; the chapter on screen keeps loading
+  // throughout); clips go nearest first, VIDEO at a time. Everything else is parked (in-flight frames finish). Re-picked
+  // every 50 ms. `warm` is live: the window around the scroll is in hand. A set stuck for STALL (a failed frame) is
+  // passed over: the frames it does have still draw.
+  const list = CLIPS[p]
+  const stalled = new Set<string>()
+  const last = new Map<string, { at: number; since: number }>()
+  const done = (c: Clip) => (isSeq(c.id) ? seqProgress(c.id) >= 1 || stalled.has(c.id) : urls.has(c.id))
+  let y = frame.scroll
+  let reach = 2
+  for (;;) {
+    if (ctl.signal.aborted) return
+    // a fast scroll (over FAST px/s) reaches further ahead: four chapters instead of two, until it slows
+    const speed = Math.abs(frame.scroll - y) * 20
+    y = frame.scroll
+    reach = speed > FAST ? 4 : speed < FAST / 3 ? 2 : reach
+    const cur = Math.max(0, frame.index)
+    const back = frame.dir < 0
+    const ahead = (c: Clip) => (c.chapter - cur) * (back ? -1 : 1)
+    const first = !hasScrolled()
+    const inWin = (c: Clip) => (first ? ahead(c) === 0 || ahead(c) === 1 : ahead(c) >= -1 && ahead(c) <= reach)
+    // before the first scroll the next chapter is a first batch only: its sets to the coarse level, its first clip
+    const enough = (c: Clip) => (first && ahead(c) === 1 ? (isSeq(c.id) ? seqProgress(c.id) >= COARSE : urls.has(c.id) || c.id !== list.find((d) => d.chapter === c.chapter && !isSeq(d.id))?.id) : done(c))
+    const win = list.filter(inWin)
+    const sets = win.filter((c) => isSeq(c.id) && !enough(c))
+    const thin = sets.filter((c) => seqProgress(c.id) < COARSE)
+    const go = thin.length ? sets.filter((c) => ahead(c) === 0 || thin.includes(c)) : sets
+    const now = performance.now()
+    for (const c of list.filter((c) => isSeq(c.id) && !done(c))) {
+      if (!go.includes(c)) {
+        pauseSeq(c.id)
+        last.delete(c.id)
+        continue
+      }
+      prefetchSeq(c.id)
+      const at = seqProgress(c.id)
+      const l = last.get(c.id)
+      if (!l || l.at !== at) last.set(c.id, { at, since: now })
+      else if (now - l.since > STALL) stalled.add(c.id)
+    }
+    const vids = win.filter((c) => !isSeq(c.id) && !enough(c) && !fetching.has(c.id)).sort((x, y) => Math.abs(ahead(x)) - Math.abs(ahead(y)) || x.seg - y.seg)
+    for (const c of vids.slice(0, Math.max(0, VIDEO - fetching.size))) void fetchOne(c).catch(() => {})
+    const caught = win.every(enough) && fetching.size === 0
+    if (caught !== warm) {
+      warm = caught
+      emit()
+    }
+    // the whole path is in hand: nothing left to stream
+    if (list.every(done)) break
+    await sleep(50)
+  }
+  await pics
   emit()
   if (!ctl.signal.aborted) {
     warm = true

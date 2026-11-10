@@ -15,7 +15,11 @@
 #    set is the fallback for a browser without AVIF and keeps its per-frame cap only.
 #    FRAMES=<n> keeps n evenly spaced master frames, so a set costs its share of the path budget. DENOISE=1 adds hqdn3d
 #    before the downscale, for water and grass that stay over the frame cap at the lowest WebP q.
+#    PRESET=<n> is the SVT-AV1 preset (default 6; 4 is ~25 % smaller at the same SSIM). WEBP_KB=<n> caps each WebP frame
+#    (default the 150 KB frame cap). perf/story-smooth-scroll: every shipped frame (72 a clip, the trimmed ones fewer) at
+#    the set's old bytes: FROM_SHIPPED=1 PRESET=4 SET_KB=<old set> WEBP_KB=<old WebP set / frames>.
 set -euo pipefail
+PRESET=${PRESET:-6}
 cd "$(dirname "$0")/.."
 for id in "$@"; do
   # FROM_SHIPPED=1: the clip's shipped 2560 AV1 file, for an id whose masters/ take is not the footage on the site
@@ -32,16 +36,30 @@ for id in "$@"; do
     mkdir -p "$tmp/$tier"
     ffmpeg -nostdin -v error -y -i "$in" -vf "$vf" -fps_mode vfr -start_number 0 "$tmp/$tier/%03d.png"
     for ext in avif webp; do
-      ladder="39 42 45 47 50"
+      ladder="39 42 45 47 50 52 54 56 58 60"
+      # SET_KB: a probe pass over every 8th frame picks the first crf whose projected set fits, so the full set is
+      # encoded once or twice instead of once per ladder step
+      if [ $ext = avif ] && [ -n "${SET_KB:-}" ]; then
+        frames=("$tmp/$tier"/*.png); nf=${#frames[@]}
+        while [ "${ladder#* }" != "$ladder" ]; do
+          crf=${ladder%% *}; t=0; k=0
+          for ((j = 0; j < nf; j += 8)); do
+            ffmpeg -nostdin -v error -y -i "${frames[$j]}" -vf format=yuv420p -c:v libsvtav1 -preset $PRESET -crf $crf -frames:v 1 "$tmp/probe.avif" 2>&1 | grep -v '^Svt' || true
+            t=$((t + $(stat -f%z "$tmp/probe.avif"))); k=$((k + 1))
+          done
+          [ $((t * nf / k)) -le $((SET_KB * 1024)) ] && break
+          ladder=${ladder#* }
+        done
+      fi
       while :; do
         crf=$ladder; total=0; max=0; n=0
         for f in "$tmp/$tier"/*.png; do
           out="public/media/$id-f_${tier}_$(basename "${f%.png}").$ext"
           for q in $([ $ext = avif ] && echo $crf || echo 75 70 65 60 55 50 45 40 35 30 25 20 15 10 5); do
             if [ $ext = avif ]; then
-              ffmpeg -nostdin -v error -y -i "$f" -vf format=yuv420p -c:v libsvtav1 -preset 6 -crf $q -frames:v 1 "$out" 2>&1 | grep -v '^Svt' || true
+              ffmpeg -nostdin -v error -y -i "$f" -vf format=yuv420p -c:v libsvtav1 -preset $PRESET -crf $q -frames:v 1 "$out" 2>&1 | grep -v '^Svt' || true
             else cwebp -quiet -m 6 -q $q "$f" -o "$out"; fi
-            [ "$(stat -f%z "$out")" -le $((cap * 1024)) ] && break
+            [ "$(stat -f%z "$out")" -le $(($([ $ext = webp ] && echo ${WEBP_KB:-$cap} || echo $cap) * 1024)) ] && break
           done
           s=$(stat -f%z "$out"); total=$((total + s)); [ $s -gt $max ] && max=$s; n=$((n + 1))
         done

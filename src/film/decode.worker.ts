@@ -10,9 +10,9 @@
  */
 export type ToWorker =
   /** fetch the frame and keep its bytes */
-  | { k: 'fetch'; seq: string; i: number; url: string }
+  | { k: 'fetch'; seq: string; i: number; url: string; hi?: boolean }
   /** fetch it if needed, then decode it */
-  | { k: 'decode'; seq: string; i: number; url: string }
+  | { k: 'decode'; seq: string; i: number; url: string; hi?: boolean }
   /** drop a sequence's bytes (the frame set changed, or the stage is gone) */
   | { k: 'free'; seq: string }
 
@@ -25,11 +25,12 @@ export type FromWorker =
 const store = new Map<string, Blob>()
 const key = (seq: string, i: number) => `${seq}:${i}`
 
-async function bytes(seq: string, i: number, url: string) {
+async function bytes(seq: string, i: number, url: string, hi = false) {
   const k = key(seq, i)
   const have = store.get(k)
   if (have) return have
-  const res = await fetch(url)
+  // the set on screen asks at high priority, a set being prefetched at low: the browser's queue keeps the same order
+  const res = await fetch(url, { priority: hi ? 'high' : 'low' } as RequestInit)
   if (!res.ok) throw new Error(`${res.status} ${url}`)
   const blob = await res.blob()
   store.set(k, blob)
@@ -43,7 +44,7 @@ onmessage = async (e: MessageEvent<ToWorker>) => {
     return
   }
   try {
-    const blob = await bytes(m.seq, m.i, m.url)
+    const blob = await bytes(m.seq, m.i, m.url, m.hi)
     if (m.k === 'fetch') {
       const out: FromWorker = { k: 'fetched', seq: m.seq, i: m.i, bytes: blob.size }
       postMessage(out)

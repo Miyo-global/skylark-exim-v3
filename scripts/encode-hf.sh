@@ -68,8 +68,10 @@ posters(){
   STILL="$tmp/first.png" LAST="$tmp/last.png" STILL_M="$still_m" CX="$cx" ID="$id" OUT="$OUT" python3 scripts/stills.py
 }
 [ "${POSTERS:-}" = only ] && { posters; exit 0; }
-caps=$(node --import tsx scripts/clip-manifest.ts caps "${CAPS_ID:-$id}")
+# a clip the solver has no caps for (a desktop frame-set clip) can still be encoded at an explicit CAP_<tier>
+caps=$(node --import tsx scripts/clip-manifest.ts caps "${CAPS_ID:-$id}" 2>/dev/null || true)
 cap(){ local o="CAP_$1"; [ -n "${!o:-}" ] && echo "${!o}" || awk -v t="$1" '$1==t{print $2}' <<<"$caps"; }
+for t in ${TIERS:-m 960 1280 1920 2560}; do [ -n "$(cap $t)" ] || { echo "! $id: no size cap for tier $t (set CAP_$t)"; exit 4; }; done
 
 line="$id (crop x $x)"
 for t in ${TIERS:-m 960 1280 1920 2560}; do
