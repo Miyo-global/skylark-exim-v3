@@ -68,6 +68,7 @@ let veilLight = false
 let hidden = false
 let isLight = false
 let isSoft = false
+let isCg = false
 let isRight = false
 let zoomKey = ''
 let lastY = 0
@@ -414,6 +415,11 @@ function tick() {
   if (soft !== isSoft) {
     isSoft = soft
     stage?.classList.toggle('is-soft', soft)
+  }
+  const cg = seg.scrim === 'cg'
+  if (cg !== isCg) {
+    isCg = cg
+    stage?.classList.toggle('is-cg', cg)
   }
   // a segment's desktop reframe (chapters.ts Media zoom), through two custom properties on the stage (stage.css)
   const z = seg.media.kind === 'video' && !env.mobile ? seg.media.zoom : undefined

@@ -104,17 +104,22 @@ export const openingReady = () =>
     const off = onCache(() => opening && (off(), done()))
   })
 
-/** Stream the opening clip and record real bytes. Returns false on a failed response; throws on abort. */
-async function fetchOpening(ctl: AbortController, c: Clip) {
+/**
+ * Stream one opening clip and record real bytes. `base` / `grand`: bytes of the opening clips before this one and of all
+ * of them, so the intro's percentage runs once across the whole first chapter. Returns false on a failed response;
+ * throws on abort.
+ */
+async function fetchOpening(ctl: AbortController, c: Clip, base = 0, grand = 0) {
   const res = await fetch(clipUrl(c.id), { signal: ctl.signal, priority: 'high' } as RequestInit)
   if (!res.ok) return false
   const declared = Number(res.headers.get('Content-Length')) || size(c) || 1
-  openingBytes = { have: 0, total: declared }
+  grand = Math.max(grand, base + declared)
+  openingBytes = { have: base, total: grand }
   emit()
   const finish = (blob: Blob) => {
     if (ctl.signal.aborted) return false
     urls.set(c.id, URL.createObjectURL(blob))
-    openingBytes = { have: openingBytes.total, total: openingBytes.total }
+    openingBytes = { have: base + blob.size, total: Math.max(grand, base + blob.size) }
     emit()
     return true
   }
@@ -129,7 +134,7 @@ async function fetchOpening(ctl: AbortController, c: Clip) {
     if (!value) continue
     chunks.push(value)
     have += value.byteLength
-    openingBytes = { have, total: Math.max(declared, have) }
+    openingBytes = { have: base + have, total: Math.max(grand, base + have) }
     if (have - reported >= 16_384) (reported = have), emit()
   }
   return finish(new Blob(chunks, { type: res.headers.get('Content-Type') || 'video/mp4' }))
@@ -162,12 +167,17 @@ async function run(p: Path) {
   // A desktop path opens on a frame set, frame 0 first.
   const first = clips[0]
   const opener = CLIPS[p][0]
+  // the whole first chapter, not just its first clip: a chapter of chained shots (o1, three CG clips) would otherwise
+  // reach its second clip on a cold cache before a frame of it is in hand
+  const chapter1 = CLIPS[p].filter((c) => opener && c.chapter === opener.chapter)
   if (opener && isSeq(opener.id)) {
-    prefetchSeq(opener.id)
+    const sets = chapter1.filter((c) => isSeq(c.id))
+    sets.forEach((c) => prefetchSeq(c.id))
     const second = CLIPS[p].find((c) => c.chapter === opener.chapter + 1 && isSeq(c.id))
     if (second) prefetchSeq(second.id)
-    const share = () => Math.min(1, seqProgress(opener.id) / OPEN_SHARE) * 0.9 + (second ? Math.min(1, seqProgress(second.id) / COARSE) : 1) * 0.1
-    const total = size(opener) * OPEN_SHARE
+    const ch1 = () => sets.reduce((a, c) => a + Math.min(1, seqProgress(c.id) / OPEN_SHARE) * size(c), 0) / Math.max(1, sets.reduce((a, c) => a + size(c), 0))
+    const share = () => ch1() * 0.9 + (second ? Math.min(1, seqProgress(second.id) / COARSE) : 1) * 0.1
+    const total = sets.reduce((a, c) => a + size(c), 0) * OPEN_SHARE
     for (const t0 = performance.now(); share() < 1 && !ctl.signal.aborted && performance.now() - t0 < OPEN_WAIT; ) {
       openingBytes = { have: total * share(), total }
       emit()
@@ -180,10 +190,17 @@ async function run(p: Path) {
     opening = true
     emit()
   } else {
-    let ok = false
-    for (let attempt = 0; attempt < OPEN_TRIES && !ok && !ctl.signal.aborted; attempt++)
-      ok = await fetchOpening(ctl, first).catch(() => false)
-    if (ctl.signal.aborted) return
+    // every video of the first chapter, in order, as one count (three tries each, then the intro opens anyway)
+    const vids = chapter1.filter((c) => !isSeq(c.id))
+    const grand = vids.reduce((a, c) => a + size(c), 0)
+    let base = 0
+    for (const c of vids.length ? vids : [first]) {
+      let ok = urls.has(c.id)
+      for (let attempt = 0; attempt < OPEN_TRIES && !ok && !ctl.signal.aborted; attempt++)
+        ok = await fetchOpening(ctl, c, base, grand).catch(() => false)
+      if (ctl.signal.aborted) return
+      base += size(c)
+    }
     opening = true
     emit()
   }
