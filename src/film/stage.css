@@ -35,14 +35,19 @@
 }
 .stage.is-soft.is-right .stage__scrim { --side: 270deg; }
 @media (max-width: 819px) { .stage.is-soft.is-right .stage__scrim { --side: 90deg; } }
-/* CG chapters (scrim: 'cg'): the renders are dark already, so no full-frame tint; a soft shade sits only behind the
-   caption block (bottom-left, or right for right-column chapters) and keeps the copy readable */
+/* CG chapters (scrim: 'cg'): no full-frame tint. A neutral (not navy) shade sits only behind the caption text, sized to
+   the caption block (bottom-left, or right for right-column chapters), so the boat and the light stay at full exposure.
+   tests/story-caption-contrast checks the copy over it. Phones: a bottom shade under the full-width caption. */
 .stage.is-cg .stage__scrim {
-  --corner: 0% 100%;
-  background: radial-gradient(70% 75% at var(--corner), rgba(7, 31, 38, 0.66) 0%, rgba(7, 31, 38, 0.34) 45%, rgba(7, 31, 38, 0) 75%);
+  --corner: 0% 82%;
+  background: radial-gradient(46% 64% at var(--corner), rgba(0, 0, 0, 0.66) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0) 100%);
 }
-.stage.is-cg.is-right .stage__scrim { --corner: 100% 100%; }
-@media (max-width: 819px) { .stage.is-cg .stage__scrim, .stage.is-cg.is-right .stage__scrim { --corner: 50% 100%; } }
+.stage.is-cg.is-right .stage__scrim { --corner: 100% 82%; }
+@media (max-width: 819px) {
+  .stage.is-cg .stage__scrim, .stage.is-cg.is-right .stage__scrim {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.66) 0%, rgba(0, 0, 0, 0.4) 30%, rgba(0, 0, 0, 0) 55%);
+  }
+}
 /* the world chapter's scroll spacer lets pointers through to the globe under it (its copy re-enables its own) */
 .chapter[data-chapter="world"] { pointer-events: none; }
 

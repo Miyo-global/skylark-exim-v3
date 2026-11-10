@@ -43,3 +43,9 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 19 | o2 catch (shot 4) | 4 new frame options (E-H) on shot 3's camera line (10 s retake dissolved two trawlers: failed) | nano_banana_pro 2K | 8 | 579 |
 | 20 | o2 catch (shot 4) | 480p test, 5 s, shot 3 last frame to E (Tarun's pick; stop and ask if it fails) | seedance_2_5 | 15 | 594 |
 | 21 | o2 catch (shot 4) | HD final 1080p, 5 s, high bitrate (second sun to be removed in post, 0 credits) | seedance_2_5 | 80 | 674 |
+| 22 | o3 on ice (shot 5) | 4 frame options (A-D), chapter 02 last frame as reference, sun kept behind the gantry | nano_banana_pro 2K | 8 | 682 |
+| 23 | o3 on ice (shot 5) | 480p test, chapter 02 last frame to pick D | seedance_2_5 480p 5 s | 15 | 697 |
+| 24 | o3 on ice (shot 5) | 480p retake to D: stern ramp kept open, crates on deck from the start (first test: ramp filled in, crates appeared). Second fail = new frames, no third retake | seedance_2_5 480p 5 s | 15 | 712 |
+| 25 | o3 on ice (shot 5) | Retake failed the same way (ramp filled in, crates appeared). 4 new frame options E-H: ramp kept open, sun in the same spot | nano_banana_pro 2K | 8 | 720 |
+| 26 | o3 on ice (shot 5) | 480p test, chapter 02 last frame to pick G (camera rises straight up, sun leaves top of frame) | seedance_2_5 480p 5 s | 15 | 735 |
+| 27 | o3 on ice (shot 5) | HD final 1080p, 5 s, high bitrate, to G (check frames 16-64 for ramp plate pop-in before wiring) | seedance_2_5 | 80 | 815 |
