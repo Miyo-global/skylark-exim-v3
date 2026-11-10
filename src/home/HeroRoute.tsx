@@ -1,7 +1,11 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { film } from '../config/content'
 import { W } from '../film/segments'
+import { COAST } from './coast'
 import { GRATICULE, MARKERS, ORIGIN_XY, R } from './Orbit'
+
+/** a market on the far side of the sphere gets no dot and no route (none is, in this view; the rule holds if the list grows) */
+const FRONT = MARKERS.filter((m) => m.front)
 
 /** draws the scene at scroll progress 0..1 of the hero's runway */
 export type Scrub = (p: number) => void
@@ -9,16 +13,23 @@ export type Scrub = (p: number) => void
 /** points along the line; the same count makes the wake and the globe's rim, so one path turns into the other */
 const N = 72
 /**
- * The wake line in the clip's own frame (0..1), as a cubic Bézier: from the wake astern, along the water beside the
- * hull, out to open sea. Read off cg-depart-1's 16:9 frame and its portrait crop (`m`, upright phones).
+ * The wake line in the clip's own frame (0..1): points on the real foam, read off cg-depart-1's last frame (the clip
+ * has played out by the time the page scrolls), then on out to open sea. 16:9: from the foam at the stern, along the
+ * white water down the hull's side to the bow wave. The portrait crop (`m`, upright phones) shows the bow only, so its
+ * line comes in from the left edge along the same foam. A Catmull-Rom spline runs through them.
  */
 const CLIP =
   W === 'm'
-    ? { w: 810, h: 1440, x: [-0.04, 0.3, 0.6, 0.96], y: [0.71, 0.66, 0.56, 0.4] }
-    : { w: 16, h: 9, x: [0.03, 0.34, 0.6, 0.9], y: [0.95, 0.76, 0.52, 0.36] }
-const bez = (t: number, [a, b, c, d]: number[]) => {
-  const u = 1 - t
-  return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d
+    ? { w: 810, h: 1440, pts: [[-0.04, 0.71], [0.21, 0.663], [0.45, 0.596], [0.7, 0.509], [0.96, 0.4]] }
+    : { w: 16, h: 9, pts: [[0.19, 0.745], [0.31, 0.73], [0.43, 0.675], [0.525, 0.595], [0.585, 0.505], [0.7, 0.425], [0.88, 0.34]] }
+/** the point at t (0..1) of the spline through `pts` */
+function spline(t: number, pts: number[][]): [number, number] {
+  const n = pts.length - 1
+  const i = Math.min(n - 1, Math.floor(t * n))
+  const u = t * n - i
+  const [a, b, c, d] = [pts[Math.max(0, i - 1)], pts[i], pts[i + 1], pts[Math.min(n, i + 2)]]
+  const at = (k: number) => 0.5 * (2 * b[k] + (c[k] - a[k]) * u + (2 * a[k] - 5 * b[k] + 4 * c[k] - d[k]) * u * u + (3 * b[k] - a[k] - 3 * c[k] + d[k]) * u * u * u)
+  return [at(0), at(1)]
 }
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
 const seg = (p: number, a: number, b: number) => clamp01((p - a) / (b - a))
@@ -31,7 +42,8 @@ const ROUTES = [0.64, 0.93]
 
 /**
  * The hero's scroll scene (feat/hero-fable-test): the trawler's wake becomes a thin warm line out to sea, the line
- * lifts and closes into the rim of the markets globe (home/Orbit.tsx's sphere, arcs and markets from config/markets.ts),
+ * lifts and closes into the rim of the markets globe (home/Orbit.tsx's sphere, arcs and markets from config/markets.ts,
+ * with coastlines),
  * and the export routes light up one by one. One SVG in screen pixels; `scrub` writes it per frame, attributes only.
  */
 export function HeroRoute({ scrub }: { scrub: RefObject<Scrub | null> }) {
@@ -63,8 +75,9 @@ export function HeroRoute({ scrub }: { scrub: RefObject<Scrub | null> }) {
       const [cx, cy] = tall ? [w / 2, h * 0.44] : [w * 0.7, h * 0.52]
       for (let i = 0; i < N; i++) {
         const t = i / (N - 1)
-        A[i * 2] = ox + bez(t, CLIP.x) * CLIP.w * s
-        A[i * 2 + 1] = oy + bez(t, CLIP.y) * CLIP.h * s
+        const [u, v] = spline(t, CLIP.pts)
+        A[i * 2] = ox + u * CLIP.w * s
+        A[i * 2 + 1] = oy + v * CLIP.h * s
         // once round the rim, from its lower left
         const a = ((135 + 360 * t) * Math.PI) / 180
         B[i * 2] = cx + r * Math.cos(a)
@@ -123,11 +136,13 @@ export function HeroRoute({ scrub }: { scrub: RefObject<Scrub | null> }) {
           <g className="route__body">
             <circle r={R} className="route__sphere" />
             {GRATICULE.map((d, i) => d && <path key={i} d={d} className="route__grid" />)}
+            {/* faint coastlines, traced from the site's own earth texture (scripts/coastline.py): the routes read as geography */}
+            <path d={COAST} className="route__coast" />
           </g>
-          {MARKERS.map((m) => (
+          {FRONT.map((m) => (
             <path key={m.name} d={m.arc} pathLength={1} className="route__arc" />
           ))}
-          {MARKERS.map((m) => (
+          {FRONT.map((m) => (
             <circle key={m.name} cx={m.x} cy={m.y} r={1.8} className="route__dot" />
           ))}
           <circle cx={ORIGIN_XY[0]} cy={ORIGIN_XY[1]} r={3} className="route__origin" />

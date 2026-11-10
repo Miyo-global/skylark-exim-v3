@@ -10,7 +10,7 @@
     <meta property="og:title" content="Skylark Exim | Seafood Exporter, Visakhapatnam" />
     <meta property="og:description" content="Premium raw fresh, chilled and frozen seafood, with a fully integrated value chain from sourcing to delivery. Skylark Exim, Visakhapatnam." />
     <meta property="og:url" content="https://skylarkexim.com/" />
-    <meta property="og:image" content="https://skylarkexim.com/media/hero-loop_1280.webp" />
+    <meta property="og:image" content="https://skylarkexim.com/media/cg-depart-1_1280.webp" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://skylarkexim.com/" />
     <link rel="preload" href="/fonts/instrument-serif-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
@@ -22,11 +22,12 @@
     <link rel="icon" href="/favicon-48.webp" type="image/webp" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <!-- the film moved to /story: old /#ocean, /#pond and /#story links go there before anything paints (no server sees a hash) -->
-    <script>if(/^#(ocean|pond|story)$/.test(location.hash))location.replace('/story'+(location.hash==='#story'?'':location.hash))</script>
+    <!-- a reload opens on the hero's first frame, not part-way down its scroll scene -->
+    <script>history.scrollRestoration='manual';(function(h){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;h.classList.add('drop-intro');setTimeout(function(){if(h.dataset.ready!=='1')h.classList.remove('drop-intro')},3000)})(document.documentElement);if(/^#(ocean|pond|story)$/.test(location.hash))location.replace('/story'+(location.hash==='#story'?'':location.hash))</script>
     <style>
       /* critical: the loader and the hero copy paint before any JS. The mark sits in the header band above the copy (#219: it
          clears the copy on short laptops too), and the copy stays on top of the loader (#207): Chrome ignores occluded text for LCP, so hidden copy would wait for the reveal. */
-      body{margin:0;background:#071f26}
+      html{background:#071f26}body{margin:0;background:#071f26}
       /* the homepage hero is the first screen of a scrolling page, not the film's fixed frame (the static copy matches it) */
       .is-home .hero{position:absolute;height:100svh}
       .loader{--r:0px;position:fixed;inset:0;z-index:100;display:grid;justify-content:center;align-content:start;padding-top:14px;background:#071f26;color:#f6f2ea;animation:loader-thin .7s ease-out forwards,loader-out .2s ease 3s forwards;-webkit-mask:radial-gradient(circle at 50% 50%,transparent var(--r),#000 calc(var(--r) + 1px));mask:radial-gradient(circle at 50% 50%,transparent var(--r),#000 calc(var(--r) + 1px))}

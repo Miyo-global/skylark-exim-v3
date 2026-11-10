@@ -5,8 +5,8 @@ import { onTick } from '../engine/ticker'
  * opens a hole onto the CG clip under the canvas. One fragment shader on raw WebGL (no three.js in the hero's chunk):
  * the canvas is navy with a transparent, growing disc, so the clip needs no texture upload.
  */
-const FALL = 0.85 // s, drop in the air
-const SPREAD = 1.9 // s, ripple from the landing to past the far corner
+const FALL = 0.65 // s, drop in the air
+const SPREAD = 1.5 // s, ripple from the landing to past the far corner
 
 const VERT = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}'
 const FRAG = `precision mediump float;
@@ -88,7 +88,8 @@ export async function initDrop(canvas: HTMLCanvasElement, mobile: boolean): Prom
     gl.uniform2f(uRes, w, h)
     gl.uniform2f(uHit, hx, hy)
     gl.uniform1f(uT, t)
-    gl.uniform1f(uTop, (h - hy) / m + 0.1)
+    // it starts in view, under the header: the first frame after the intro already shows it
+    gl.uniform1f(uTop, (h * 0.86 - hy) / m)
     gl.uniform1f(uMax, Math.hypot(Math.max(hx, w - hx), Math.max(hy, h - hy)) / m + 0.05)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   }

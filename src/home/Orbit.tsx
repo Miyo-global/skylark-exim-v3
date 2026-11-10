@@ -40,11 +40,11 @@ const [ox, oy] = project(ORIGIN.lat, ORIGIN.lon)
 /** Visakhapatnam on the sphere's face: the hero's route globe (HeroRoute.tsx) draws the same arcs */
 export const ORIGIN_XY = [ox, oy] as const
 export const MARKERS = MARKET_COORDS.map((m) => {
-  const [x, y] = project(m.lat, m.lon)
+  const [x, y, front] = project(m.lat, m.lon)
   // the arc bows away from the sphere's centre, more for the far markets
   const lift = 1 + Math.hypot(x - ox, y - oy) / (R * 2.2)
   const [cx, cy] = [((ox + x) / 2) * lift, ((oy + y) / 2) * lift]
-  return { name: m.name, x, y, arc: `M${ox.toFixed(1)} ${oy.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}` }
+  return { name: m.name, x, y, front, arc: `M${ox.toFixed(1)} ${oy.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}` }
 })
 
 export function Orbit({ className }: { className?: string }) {

@@ -6,7 +6,7 @@ import { env } from '../engine/env'
 import { lockScroll, scrollToY, unlockScroll } from '../engine/ticker'
 import { W, clipUrl, mediaUrl } from '../film/segments'
 import { prefetchStory } from './prefetch'
-import { Orbit } from './Orbit'
+import { GLOBE_POSTER } from '../three/globeState'
 import './story-entry.css'
 
 type Id = EntryCard['id']
@@ -57,6 +57,9 @@ function useBox(ref: React.RefObject<HTMLElement | null>, frozen: boolean) {
   return box
 }
 const FOCUSABLE = 'a[href], button:not([disabled])'
+
+/** the world card's globe: about a third of the window wide, more on phones */
+const ORBIT_SIZES = '(max-width: 819px) 70vw, 36vw'
 
 /**
  * Touch has no hover, so a loop plays while its card is in view, but only once the page has been still for 300 ms:
@@ -223,7 +226,11 @@ function Card({ card, open, settled, onOpen, onClose }: { card: EntryCard; open:
             <Loop className="se-media__loop" src={loops && px ? clipUrl(card.clip, portrait ? 'm' : tierFor(px, Math.min(card.top ?? 2560, phone() ? 1920 : typeof W === 'number' ? W : 2560) as Desk)) : null} play={open ? settled : hover || (inView && pageStill)} />
           </>
         ) : (
-          <Orbit className="se-orbit" />
+          // the live globe's own first view (three/globeState.ts), lazy: a photograph here, so the hero's line globe is not shown twice
+          <picture>
+            <source type="image/avif" srcSet={GLOBE_POSTER('avif')} sizes={ORBIT_SIZES} />
+            <img className="se-orbit se-orbit--photo" srcSet={GLOBE_POSTER('webp')} sizes={ORBIT_SIZES} src="/textures/globe-home_1280.webp" alt="" width={1280} height={1280} loading="lazy" decoding="async" />
+          </picture>
         )}
         <span className="se-media__scrim" />
         <span className="se-media__veil" />

@@ -4,9 +4,8 @@ import { env } from '../engine/env'
 import { store, type Path } from '../engine/store'
 import { CLIPS } from '../film/manifest'
 import { avifReady, clipUrl, codecReady, isSeq, posterUrl } from '../film/segments'
-import { GLOBE_TEXTURE } from '../three/globeState'
 import type { Gate } from '../ui/Loader'
-import { heroReady } from './HomeHero'
+import { dropReady } from './HomeHero'
 
 const hinted = new Set<string>()
 function hint(rel: 'modulepreload' | 'prefetch', href: string, as?: string) {
@@ -65,8 +64,9 @@ export function bindStoryPrefetch() {
 }
 
 /**
- * The homepage's gate (#preload): the intro counts real work from 0 % to 100 % and opens when the city video can play
- * through and the hero poster has decoded. The other page images and the globe texture continue in the background.
+ * The homepage's gate (#preload): the intro counts real work from 0 % to 100 % and opens when the hero poster has
+ * decoded and the drop's shader is ready (home/HomeHero.tsx). Nothing below the fold is fetched here: the story cards,
+ * the plant stills and the globe (its chunk and its earth texture) load lazily, as the page nears them.
  * Nothing here waits on /story.
  */
 export function homeGate(mounted: Promise<void>): Gate {
@@ -81,13 +81,10 @@ export function homeGate(mounted: Promise<void>): Gate {
     ready: () =>
       (ready ??= mounted.then(async () => {
         const poster = document.querySelector<HTMLImageElement>('.home-hero picture img')
-        const rest = [...document.querySelectorAll<HTMLImageElement>('main img')].filter((img) => img !== poster)
         total = 2
         subs.forEach((f) => f())
         const posterJob = poster ? decodeAll([poster], tick) : Promise.resolve().then(tick)
-        await Promise.all([heroReady.then(tick), posterJob])
-        void decodeAll(rest, () => {})
-        void GLOBE_TEXTURE.home.then((u) => fetch(u)).then((r) => r.blob()).catch(() => null)
+        await Promise.all([dropReady.then(tick), posterJob])
       })),
   }
 }

@@ -13,10 +13,15 @@ import './hero-fable.css'
 
 const heroSrc = clipUrl(HERO_CLIP)
 
-let heroIn = () => {}
-/** the hero clip can play through (at once with reduced motion: there is no video); the homepage's intro waits for it */
-export const heroReady = new Promise<void>((r) => (heroIn = r))
-if (env.reduced) heroIn()
+let dropIn = () => {}
+/**
+ * The drop's shader is compiled and its first, navy frame drawn (at once where there is no drop: reduced motion, the
+ * low tier). The homepage's intro waits for it, so the drop falls the moment the intro has opened: no blank beat. The
+ * clip is not waited for: its first frame is the poster, and it rolls when the drop lands, or when it can.
+ */
+export const dropReady = new Promise<void>((r) => (dropIn = r))
+/** the intro never waits longer than this for the shader */
+const DROP_CAP_MS = 1500
 
 /**
  * No WebGL drop here: the poster fades in from the navy instead. Save-Data, 2G/3G, and phones with 2 GB or less.
@@ -47,7 +52,7 @@ const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
 /**
  * Homepage hero, experimental (feat/hero-fable-test), "From one drop to the world":
  * 1. near-black navy; one glowing drop falls and its ripple opens onto the CG departure clip (home/drop.ts, WebGL,
- *    fetched and compiled after the first paint; the navy veil simply fades where there is no WebGL);
+ *    fetched and compiled after the first paint, during the intro; the navy veil simply fades where there is no WebGL);
  * 2. the headline and the sub-line come in word by word (GSAP);
  * 3. on scroll the hero holds the screen: the wake becomes a warm line out to sea, lifts into the markets globe, and
  *    the export routes light one by one (home/HeroRoute.tsx).
@@ -71,7 +76,9 @@ export function HomeHero({ sectionRef }: { sectionRef: RefObject<HTMLElement | n
     if (env.reduced) return
     const ctx = gsap.context(() => {
       gsap.set('.hero__word', { opacity: 0, yPercent: 55 })
-      gsap.set('.hero__eyebrow, .hero__exports, .hero__contact, .hero__fork, .hero__cue', { opacity: 0 })
+      gsap.set('.hero__eyebrow, .hero__band, .hero__cue', { opacity: 0 })
+      // the rust hairline beside the copy comes in with it, not before (ui/hero.css)
+      gsap.set('.hero__copy', { '--hero-rule': 0 })
     }, root)
     return () => ctx.revert()
   }, [])
@@ -79,7 +86,8 @@ export function HomeHero({ sectionRef }: { sectionRef: RefObject<HTMLElement | n
   // WebGL after the first paint: this effect runs in the app's chunk, itself requested once the first screen is on
   // screen (engine/first-screen.ts); the shader's chunk and its compile then take an idle slice during the intro
   useEffect(() => {
-    if (env.reduced || LOW || !canvas.current) return
+    if (env.reduced || LOW || !canvas.current) return dropIn()
+    const cap = setTimeout(dropIn, DROP_CAP_MS)
     const el = canvas.current
     let gone = false
     const job = new Promise<Drop | null>((done) => {
@@ -87,7 +95,7 @@ export function HomeHero({ sectionRef }: { sectionRef: RefObject<HTMLElement | n
         void import('./drop')
           .then((m) => (gone ? null : m.initDrop(el, env.mobile)))
           .catch(() => null)
-          .then(done)
+          .then((d) => (clearTimeout(cap), dropIn(), done(d)))
       if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 600 })
       else setTimeout(go, 100)
     })
@@ -110,31 +118,31 @@ export function HomeHero({ sectionRef }: { sectionRef: RefObject<HTMLElement | n
       const q = gsap.utils.selector(root)
       tl = gsap
         .timeline({ delay })
-        .to(q('.hero__eyebrow'), { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0)
-        .to(q('.hero__title .hero__word'), { opacity: 1, yPercent: 0, duration: 0.9, ease: 'power3.out', stagger: 0.09 }, 0.05)
-        .to(q('.hero__body .hero__word'), { opacity: 1, yPercent: 0, duration: 0.6, ease: 'power3.out', stagger: 0.022 }, '-=0.55')
-        .to(q('.hero__exports, .hero__contact, .hero__fork, .hero__cue'), { opacity: 1, duration: 0.6, stagger: 0.08, clearProps: 'opacity' }, '-=0.35')
+        .to(q('.hero__eyebrow'), { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0)
+        .to(q('.hero__copy'), { '--hero-rule': 1, duration: 0.5, ease: 'power2.out' }, 0)
+        .to(q('.hero__title .hero__word'), { opacity: 1, yPercent: 0, duration: 0.75, ease: 'power3.out', stagger: 0.08 }, 0.05)
+        .to(q('.hero__body .hero__word'), { opacity: 1, yPercent: 0, duration: 0.5, ease: 'power3.out', stagger: 0.018 }, 0.35)
+        .to(q('.hero__band, .hero__cue'), { opacity: 1, duration: 0.5, stagger: 0.1, clearProps: 'opacity' }, 0.75)
     }
-    // the clip starts from its first frame as the water opens
+    // the clip has waited on its first frame (no autoplay): it rolls as the water opens, with no seek back
     const roll = () => {
       const v = video.current
       if (!v) return
       v.dataset.rolled = '1'
-      v.currentTime = 0
       void v.play().catch(() => {})
     }
     const plain = () => {
       veil.current?.classList.add('is-out')
       if (canvas.current) canvas.current.style.display = 'none'
       roll()
-      copyIn(0.4)
+      copyIn(0.3)
     }
     if (!drop.current) plain()
     else
       void drop.current.then((d) => {
         if (dead) return
         if (!d) return plain()
-        d.play(() => (roll(), copyIn(0.35)), () => {})
+        d.play(() => (roll(), copyIn(0.15)), () => {})
         // the canvas is drawing the same navy: the veil can go
         if (veil.current) veil.current.style.display = 'none'
       })
@@ -180,7 +188,8 @@ export function HomeHero({ sectionRef }: { sectionRef: RefObject<HTMLElement | n
         copy.current.style.opacity = String(1 - out)
         copy.current.style.visibility = out >= 1 ? 'hidden' : ''
       }
-      if (dusk.current) dusk.current.style.opacity = String(0.9 * clamp01((p - 0.34) / 0.24))
+      if (dusk.current) dusk.current.style.opacity = String(clamp01((p - 0.34) / 0.24))
+      // the boat is gone by the time the globe stands: a clean card
       if (media.current) media.current.style.transform = `scale(${(1 + 0.06 * clamp01(p / 0.6)).toFixed(4)})`
       scrub.current?.(p)
     })
@@ -200,15 +209,12 @@ export function HomeHero({ sectionRef }: { sectionRef: RefObject<HTMLElement | n
               ref={video}
               className="hero__poster"
               src={heroSrc}
-              autoPlay
               muted
               playsInline
               preload="auto"
               disablePictureInPicture
               aria-hidden="true"
               tabIndex={-1}
-              onCanPlayThrough={heroIn}
-              onError={heroIn}
             />
           )}
         </div>
@@ -230,24 +236,28 @@ export function HomeHero({ sectionRef }: { sectionRef: RefObject<HTMLElement | n
           </h1>
           <div className="hero__rest">
             <p className="hero__body">{words(start.body)}</p>
-            <div className="hero__exports">
-              <h2 className="hero__exports-title mono">{exportsLine.title}</h2>
-              <ul>
-                {exportsLine.items.map((t) => (
-                  <li key={t}>{t}</li>
-                ))}
-              </ul>
-            </div>
-            <a className="hero__contact" href="/quote">
-              Contact us
-            </a>
-            <div className="hero__fork" role="group" aria-label={start.choose}>
-              <span className="hero__fork-label mono">{start.choose}</span>
-              {PATHS.map((p) => (
-                <a key={p} className="hero__fork-btn" href={`/story#${p}`} data-path={p}>
-                  {start[p].sub}
+            <div className="hero__band">
+              <div className="hero__exports">
+                <h2 className="hero__exports-title mono">{exportsLine.title}</h2>
+                <ul>
+                  {exportsLine.items.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="hero__actions">
+                <a className="hero__contact" href="/quote">
+                  Contact us
                 </a>
-              ))}
+                <div className="hero__fork" role="group" aria-label={start.choose}>
+                  <span className="hero__fork-label mono">{start.choose}</span>
+                  {PATHS.map((p) => (
+                    <a key={p} className="hero__fork-btn" href={`/story#${p}`} data-path={p}>
+                      {start[p].sub}
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

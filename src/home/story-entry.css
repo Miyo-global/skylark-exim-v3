@@ -1,5 +1,7 @@
 /* Story Entry (#268): three bento cards after the hero; a card grows to the viewport and its facts float in. */
 .se { --se-pad: clamp(20px, 2.4vw, 40px); position: relative; z-index: var(--z-content); padding: var(--gutter); background: var(--deep-2); color: var(--ice); }
+/* the lead line clears the fixed bar (68 px) when the section sits at the top of the window */
+.se { padding-top: max(var(--gutter), 88px); }
 .se-lead { max-width: 68ch; margin: 0 0 clamp(16px, 2.2vh, 28px); font-size: clamp(0.9375rem, 0.35vw + 0.82rem, 1.0625rem); line-height: 1.45; color: rgba(246, 242, 234, 0.9); }
 /* an open card covers the fixed header too: the section's own stacking context goes above the chrome while it is open */
 .se.is-open { z-index: 60; }
@@ -33,6 +35,8 @@
 .se-card--dark .se-media__veil { background: radial-gradient(ellipse 40% 34% at 50% 50%, rgba(7, 31, 38, 0.7) 0%, rgba(7, 31, 38, 0) 100%); }
 .se-orbit { position: absolute; top: 50%; right: -6%; height: 125%; aspect-ratio: 1; translate: 0 -50%; overflow: visible; transition: rotate 2.4s var(--ease-out); }
 /* open: lowered so the Visakhapatnam pin and its label sit under the buttons, not behind the copy */
+/* the photographed globe sits on a sand square: only the disc shows */
+.se-orbit--photo { width: auto; clip-path: circle(40%); }
 .se-card.is-open .se-orbit { right: 50%; translate: 50% -36%; height: 112%; opacity: 0.6; }
 .se-card--dark:not(.is-open):hover .se-orbit { rotate: -6deg; }
 .orbit__rim { stroke: rgba(246, 242, 234, 0.28); stroke-width: 0.6; }

@@ -24,7 +24,8 @@
 .route__line--glow { stroke-width: 10; opacity: 0.16; }
 .route__body { opacity: 0; }
 .route__sphere { fill: rgba(18, 60, 72, 0.42); }
-.route__grid { fill: none; stroke: rgba(246, 242, 234, 0.15); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.route__grid { fill: none; stroke: rgba(246, 242, 234, 0.09); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.route__coast { fill: none; stroke: rgba(246, 242, 234, 0.34); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 /* widths in the globe's own units (radius 100): non-scaling-stroke would measure the dashes in screen px and break pathLength */
 .route__arc { fill: none; stroke: var(--brass); stroke-width: 0.55; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
 .route__dot { fill: var(--ice); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }

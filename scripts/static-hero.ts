@@ -22,8 +22,8 @@ export function staticHero(): Plugin {
 <p class="hero__eyebrow mono">${esc(start.eyebrow)}</p>
 <h1 class="hero__title">${esc(lead)} <em>world</em>.</h1>
 <p class="hero__body">${esc(start.body)}</p>
-<div class="hero__exports"><h2 class="hero__exports-title mono">${esc(exportsLine.title)}</h2><ul>${exportsLine.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
-<a class="hero__contact" href="/quote">Contact us</a><div class="hero__fork" role="group" aria-label="${esc(start.choose)}"><span class="hero__fork-label mono">${esc(start.choose)}</span><a class="hero__fork-btn" href="/story#ocean" data-path="ocean">${esc(start.ocean.sub)}</a><a class="hero__fork-btn" href="/story#pond" data-path="pond">${esc(start.pond.sub)}</a></div>
+<div class="hero__band"><div class="hero__exports"><h2 class="hero__exports-title mono">${esc(exportsLine.title)}</h2><ul>${exportsLine.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>
+<div class="hero__actions"><a class="hero__contact" href="/quote">Contact us</a><div class="hero__fork" role="group" aria-label="${esc(start.choose)}"><span class="hero__fork-label mono">${esc(start.choose)}</span><a class="hero__fork-btn" href="/story#ocean" data-path="ocean">${esc(start.ocean.sub)}</a><a class="hero__fork-btn" href="/story#pond" data-path="pond">${esc(start.pond.sub)}</a></div></div></div>
 </div></div>`
   // after the loader markup (end of body), once the web fonts have set the copy (fallback metrics differ): is there
   // room above the copy for the mark? Only z-index changes, so the check can never shift the layout
@@ -40,6 +40,11 @@ export function staticHero(): Plugin {
     // id selector: the bundled hero.css (.hero hidden until ready) loads after this style and must not win
     '#hero-static{visibility:visible;opacity:1;z-index:101}#hero-static .hero__copy{pointer-events:none;visibility:hidden}' +
     '.fonts-in #hero-static .hero__copy{visibility:visible}' +
+    // feat/hero-fable-test: the static copy is painted (it is the page's LCP text) but never seen: it takes the intro's
+    // own navy, so the first thing a visitor sees after the intro is the drop, and the copy then comes in once.
+    // `drop-intro` is set by an inline script in index.html: not with reduced motion (no intro: this copy is the copy
+    // until React's takes over), and it is dropped at 3 s if the app has not arrived, like the intro's own failsafe
+    '.drop-intro #hero-static,.drop-intro #hero-static *{color:#071f26!important;border-color:transparent!important;text-decoration-color:transparent!important}.drop-intro #hero-static .hero__copy::before{display:none}' +
     // no room above the copy even for the small mark (360×640, landscape phones): the inline script measures it once the
     // fonts are in and only drops the copy under the loader (z-index, no layout change), as before #207
     '.hero-under-loader #hero-static{z-index:var(--z-copy)}'

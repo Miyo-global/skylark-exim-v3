@@ -100,6 +100,26 @@ test('the clip rests once the hero is fully off screen', async ({ page }) => {
   await expect.poll(async () => (await video(page))!.paused).toBe(true)
 })
 
+test('a reload part-way down the scroll scene opens on the first frame again', async ({ page }) => {
+  await page.goto('/')
+  await ready(page)
+  await page.evaluate(() => scrollTo(0, innerHeight * 1.6))
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(500)
+  await page.reload()
+  await ready(page)
+  expect(await page.evaluate(() => scrollY)).toBe(0)
+  await expect(page.locator('.hero__route')).toBeHidden()
+})
+
+test('the static copy is painted but never seen under the intro; with no app it shows at 3 s', async ({ page }) => {
+  await page.route(/\/assets\/.*\.js$/, (r) => r.abort())
+  await page.goto('/')
+  const colour = () => page.locator('#hero-static h1').evaluate((el) => getComputedStyle(el).color)
+  // the intro's own navy (#071f26)
+  expect(await colour()).toBe('rgb(7, 31, 38)')
+  await expect.poll(colour, { timeout: 6000 }).toBe('rgb(246, 242, 234)')
+})
+
 test.describe('Save-Data', () => {
   test('no WebGL: the poster fades in from the navy and the copy still comes in', async ({ page }) => {
     await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true, effectiveType: '4g' } }))
