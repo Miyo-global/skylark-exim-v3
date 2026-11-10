@@ -96,7 +96,7 @@ test('/story: the intro counts up to 100 % and opens once the first clip is in m
   const cache = await page.evaluate(() => (window as unknown as { __warmCache: { path: string; ids: string[]; opening: boolean; warm: boolean } }).__warmCache)
   expect(cache.path).toBe('ocean')
   expect(cache.opening).toBe(true)
-  expect(await opened(page, 'hf-depart')).toBe(true)
+  expect(await opened(page, 'cg-depart-1')).toBe(true)
   await expect(page.locator('html')).not.toHaveClass(/is-locked/)
 })
 
