@@ -49,6 +49,7 @@ export interface ChapterDef {
  */
 export const CROP_X: Record<string, number> = {
   'hero-loop': 0.5, opening: 0.5,
+  'cg-depart-1': 0.55, 'cg-depart-2': 0.6, 'cg-depart-3': 0.55,
   'hf-depart': 0.68, 'hf-catch': 0.55, 'hf-ice': 0.45, 'hf-return': 0.55,
   'hf-ponds': 0.5, 'hf-sample': 0.42, 'hf-harvest': 0.45, 'hf-sort': 0.5,
   'hf-arrive': 0.42, 'hf-reverse': 0.62, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
@@ -67,7 +68,7 @@ export const COPY_RIGHT = new Set(['o3', 'p2', 'process', 'port'])
  * Each set is evenly spaced master frames as AVIF stills, sized to its share of the 60 MB path (scripts/clip-frames.sh).
  * Phones keep the video (docs/review/cleanup/AUDIT.md holds the measurement).
  */
-export const SEQ_CLIPS = ['hf-depart', 'hf-catch', 'hf-ice', 'hf-return', 'hf-ponds', 'hf-sample', 'hf-harvest', 'hf-sort',
+export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'hf-catch', 'hf-ice', 'hf-return', 'hf-ponds', 'hf-sample', 'hf-harvest', 'hf-sort',
   'hf-arrive', 'hf-reverse', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
   'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
   'hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-ship', 'hf-sail']
@@ -76,8 +77,13 @@ const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map
 
 const OCEAN_ONLY: ChapterDef[] = [
   {
-    id: 'o1', path: 'ocean', label: 'Setting out', vh: 140, joinNext: 'crossfade',
-    media: [{ kind: 'video', id: 'hf-depart', alt: 'A weathered white and blue fishing boat eases away from the stone quay at sunrise while the crew coil a rope and bring in a fender.' }],
+    id: 'o1', path: 'ocean', label: 'Setting out', vh: 280, joinNext: 'crossfade',
+    // CG hero test (STYLE.md): three chained shots, each one's first frame the last frame of the one before (scripts/cg-grade.sh)
+    media: [
+      { kind: 'video', id: 'cg-depart-1', alt: 'Before dawn, a white and blue fishing boat lies at a stone quay, its mast lamp and wheelhouse windows glowing amber; the camera glides in.' },
+      { kind: 'video', id: 'cg-depart-2', alt: 'The fishing boat motors away from the quay into calm dark water as a thin amber line of first light appears on the horizon.' },
+      { kind: 'video', id: 'cg-depart-3', alt: 'The camera follows the fishing boat out toward the open sea and the brightening amber horizon.' },
+    ],
     captions: caps('o1', [[0, 0.98]]),
   },
   {

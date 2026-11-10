@@ -9,11 +9,11 @@ const ready = async (page: Page) => {
 }
 
 /**
- * anything of the film: its scripts, its clips (every .mp4 but the hero loop and the story entry's own card loops,
+ * anything of the film: its scripts, its clips (every .mp4 but the hero clip (cg-depart-1, feat/hero-fable-test) and the story entry's own card loops,
  * #268), its posters' end frames. The story warm-up after the intro (home/prefetch.ts warmStory, #preload) fetches the
  * first clips of the active path into the HTTP cache: a `fetch`, not the page playing or loading the film, so it is left out.
  */
-const isStory = (url: string) => /\/assets\/(story|Story)-|\/media\/(?!hero-loop_|hf-catch-card_|hf-sample_)[^/]+\.mp4(\?|$)/.test(url)
+const isStory = (url: string) => /\/assets\/(story|Story)-|\/media\/(?!cg-depart-1_|hf-catch-card_|hf-sample_)[^/]+\.mp4(\?|$)/.test(url)
 
 /** the chapter whose box covers the top of the viewport on /story */
 const chapterOnScreen = (page: Page) =>
@@ -28,9 +28,9 @@ test('the homepage has no film and requests nothing of the story, even scrolled 
   await page.goto('/')
   await ready(page)
   await expect(page.locator('.stage, [data-chapter], video.stage__video, .path-toggle')).toHaveCount(0)
-  // the one video with a source is the hero's city loop; the story cards' loops get a src only on hover
+  // the one video with a source is the hero's clip; the story cards' loops get a src only on hover
   await expect(page.locator('video[src]')).toHaveCount(1)
-  await expect(page.locator('.home-hero video[src*="/media/hero-loop_"]')).toHaveCount(1)
+  await expect(page.locator('.home-hero video[src*="/media/cg-depart-1_"]')).toHaveCount(1)
   await scrollThrough(page, false, 3000)
   expect(story).toEqual([])
 })
@@ -77,7 +77,7 @@ test('hovering a story link prefetches the story chunk and that path\'s first cl
   await page.mouse.move(b.x + b.width / 2 + 6, b.y + b.height / 2, { steps: 3 }) // a real move: a still pointer under a scroll does not count
   await expect(page.locator('link[rel="modulepreload"][href*="/assets/Story-"]')).toHaveCount(1)
   await expect(page.locator('link[rel="prefetch"][href*="/media/hf-ponds_"][href*=".mp4?v="]')).toHaveCount(1)
-  await expect(page.locator('link[rel="prefetch"][href*="/media/hf-depart_"]')).toHaveCount(0)
+  await expect(page.locator('link[rel="prefetch"][href*="/media/cg-depart-1_"]')).toHaveCount(0)
 })
 
 test('the header quote button opens /quote', async ({ page }) => {

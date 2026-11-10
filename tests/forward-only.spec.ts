@@ -80,7 +80,7 @@ for (const [name, view] of Object.entries(VIEWS)) {
   test.describe(name, () => {
     test.use(view)
 
-    for (const [hash, first] of [['', 'hf-depart'], ['#ocean', 'hf-depart'], ['#pond', 'hf-ponds']])
+    for (const [hash, first] of [['', 'cg-depart-1'], ['#ocean', 'cg-depart-1'], ['#pond', 'hf-ponds']])
       test(`top of /story${hash}: ${first} on its first frame at y = 0, and a scroll up goes nowhere`, async ({ page }) => {
         await open(page, hash)
         await page.waitForTimeout(2000)

@@ -1,0 +1,40 @@
+/* Experimental hero (feat/hero-fable-test): "From one drop to the world". The base hero stays in ui/hero.css (the static
+   first paint reads that file); this adds the drop's veil, the scroll runway and the route scene. */
+
+/* the hero holds the screen while its runway scrolls under it (the static copy keeps the page's own top: same place at scroll 0) */
+.is-home .home-hero .hero { position: sticky; inset: 0 auto auto 0; width: 100%; overflow: clip; }
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero { height: 360svh; }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 819px) {
+  .home-hero { height: 300svh; }
+}
+
+.hero__media { transform-origin: 62% 50%; will-change: transform; }
+/* near-black navy over the clip until the drop lands; the canvas takes over from the veil, or the veil fades on its own */
+.hero__veil, .hero__drop, .hero__dusk { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hero__veil { background: var(--deep-2); transition: opacity 1.2s var(--ease-io); }
+.hero__veil.is-out { opacity: 0; }
+/* the sea darkens as the line lifts off it */
+.hero__dusk { background: var(--deep-2); opacity: 0; }
+
+.hero__route { position: absolute; inset: 0; width: 100%; height: 100%; visibility: hidden; pointer-events: none; }
+/* one warm accent: the line (and the wider, faint copy under it that reads as its glow) and the routes */
+.route__line { fill: none; stroke: var(--brass); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.route__line--glow { stroke-width: 10; opacity: 0.16; }
+.route__body { opacity: 0; }
+.route__sphere { fill: rgba(18, 60, 72, 0.42); }
+.route__grid { fill: none; stroke: rgba(246, 242, 234, 0.09); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.route__coast { fill: none; stroke: rgba(246, 242, 234, 0.34); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+/* widths in the globe's own units (radius 100): non-scaling-stroke would measure the dashes in screen px and break pathLength */
+.route__arc { fill: none; stroke: var(--brass); stroke-width: 0.55; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.route__dot { fill: var(--ice); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+.route__origin { fill: var(--brass); opacity: 0; }
+
+.hero__world {
+  position: absolute; left: var(--gutter); bottom: clamp(56px, 11vh, 128px); z-index: 1; margin: 0; max-width: 12ch; opacity: 0; pointer-events: none;
+  font-family: var(--f-display); font-size: var(--fs-h2); line-height: 1; letter-spacing: -0.01em; color: var(--ice);
+}
+@media (orientation: portrait) {
+  .hero__world { left: 0; right: 0; bottom: 14svh; max-width: none; text-align: center; }
+}

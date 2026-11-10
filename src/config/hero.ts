@@ -3,13 +3,14 @@ export const PORTRAIT = '(orientation: portrait) and (max-width: 819px), (orient
 const OTHER = '(orientation: landscape), (min-width: 820px) and (pointer: fine)'
 
 /**
- * The hero loop's first frame (#197, #hd): the LCP image. One list for the hero <picture> (home/HomeHero.tsx) and its
+ * The hero clip's first frame (#197, #hd; feat/hero-fable-test: the CG departure shot): the LCP image. One list for the hero <picture> (home/HomeHero.tsx) and its
  * preloads (scripts/static-hero.ts), so the browser picks the same file for both. `url` versions a /media file.
  */
+export const HERO_CLIP = 'cg-depart-1'
 export const heroPoster = (url: (file: string) => string) =>
   (['avif', 'webp'] as const).flatMap((ext) => [
-    { type: `image/${ext}`, media: PORTRAIT, srcSet: `${url(`hero-loop_m.${ext}`)} 810w` },
-    { type: `image/${ext}`, media: OTHER, srcSet: [960, 1280, 1920, 2560].map((w) => `${url(`hero-loop_${w}.${ext}`)} ${w}w`).join(', ') },
+    { type: `image/${ext}`, media: PORTRAIT, srcSet: `${url(`${HERO_CLIP}_m.${ext}`)} 810w` },
+    { type: `image/${ext}`, media: OTHER, srcSet: [960, 1280, 1920].map((w) => `${url(`${HERO_CLIP}_${w}.${ext}`)} ${w}w`).join(', ') },
   ])
 
 /** The retired hero scroll sequence's frames per tier (#249): scripts/asset-audit.ts still audits the files. */

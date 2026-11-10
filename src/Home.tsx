@@ -22,11 +22,24 @@ const gate = homeGate(MOUNTED)
  */
 export default function Home() {
   const hero = useRef<HTMLElement>(null)
-  // the bar sits over the hero in the film's dark style, and turns to sand once the hero has scrolled under it
+  // the bar sits over the hero in the film's dark style, and stays dark over the story cards below it (a dark band too:
+  // a sand bar over them collided with their lead line); it turns to sand once both have scrolled under it
   const [light, setLight] = useState(false)
   useEffect(() => {
-    const io = new IntersectionObserver(([e]) => setLight(!e.isIntersecting), { rootMargin: '-68px 0px 0px 0px' })
+    const under = new Set<Element>()
+    const io = new IntersectionObserver(
+      (es) => {
+        for (const e of es) e.isIntersecting ? under.add(e.target) : under.delete(e.target)
+        setLight(!under.size)
+      },
+      { rootMargin: '-68px 0px 0px 0px' },
+    )
     io.observe(hero.current!)
+    // the story cards arrive with the lazy sections
+    void MOUNTED.then(() => {
+      const cards = document.getElementById('story-entry')
+      if (cards) io.observe(cards)
+    })
     return () => io.disconnect()
   }, [])
   useEffect(bindStoryPrefetch, [])
