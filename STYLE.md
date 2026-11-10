@@ -34,6 +34,8 @@ test passes: HD (80). Never straight to HD.
 - A shot's start frame is the last frame of the previous shot's HD final (`ffmpeg -sseof -0.05 … -update 1`).
 - Planned end frames (keyframes) are made first, so each shot gets a start image and an end image.
 - One grade on every clip: `scripts/cg-grade.sh` (same curves and saturation for all clips).
+- One exception to chaining (Tarun, 10 Nov): chapter 02 to 03 joins with a crossfade into a separate deck shot. Every
+  move over the trawler's stern (tests D, D retake, G, I) morphed the stern notch, so 03 starts on deck instead.
 - A 480p test that fails gets at most one retake; if the retake fails too, new frame options instead (Tarun, 10 Nov).
   An object that appears out of nothing or a shape that morphs (a stern ramp filling in) is a fail.
 

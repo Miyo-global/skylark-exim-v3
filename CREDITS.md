@@ -49,3 +49,11 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 25 | o3 on ice (shot 5) | Retake failed the same way (ramp filled in, crates appeared). 4 new frame options E-H: ramp kept open, sun in the same spot | nano_banana_pro 2K | 8 | 720 |
 | 26 | o3 on ice (shot 5) | 480p test, chapter 02 last frame to pick G (camera rises straight up, sun leaves top of frame) | seedance_2_5 480p 5 s | 15 | 735 |
 | 27 | o3 on ice (shot 5) | HD final 1080p, 5 s, high bitrate, to G (check frames 16-64 for ramp plate pop-in before wiring) | seedance_2_5 | 80 | 815 |
+| 28 | o3 on ice (shot 5) | New end frames I-L with the stern ramp out of shot (G HD had the ramp plate pop in; Tarun picked new frames) | nano_banana_pro 2K | 8 | 823 |
+| 29 | o3 on ice (shot 5) | 480p test, chapter 02 last frame to pick I (camera rises over the stern, ramp out of shot) | seedance_2_5 480p 5 s | 15 | 838 |
+| 30 | o3 on ice (shot 5) | I test failed (stern filled in, crew 2 to 4). Tarun chose a crossfade 02 to 03 and a separate deck shot: 4 start frames M-P | nano_banana_pro 2K | 8 | 846 |
+| 31 | o3 on ice (shot 5) | 480p test from deck start frame M (slow push along the deck; 02 to 03 crossfades) | seedance_2_5 480p 5 s | 15 | 861 |
+| 32 | o3 on ice (shot 5) | HD final 1080p, 5 s, high bitrate, from M (480p test passed: no cuts, 2 crew, one sun) | seedance_2_5 | 80 | 941 |
+| 33 | o4 back to Vizag (shot 6) | 4 end-frame options A-D from chapter 03 last frame (A/B turn for home, sun out of frame; C/D coast ahead, sun kept) | nano_banana_pro 2K | 8 | 949 |
+| 34 | o4 back to Vizag (shot 6) | 480p test, chapter 03 last frame to pick C (camera rises and pulls back over the trawler) | seedance_2_5 480p 5 s | 15 | 964 |
+| 35 | o4 back to Vizag (shot 6) | HD final 1080p, 5 s, high bitrate, to C (480p test passed). Crosses 1,000: reported to Tarun | seedance_2_5 | 80 | 1044 |

@@ -51,7 +51,7 @@ export interface ChapterDef {
 export const CROP_X: Record<string, number> = {
   'hero-loop': 0.5, opening: 0.5,
   'cg-depart-1': 0.55, 'cg-depart-2': 0.6, 'cg-depart-3': 0.55, 'cg-catch': 0.5,
-  'hf-depart': 0.68, 'hf-catch': 0.55, 'hf-ice': 0.45, 'hf-return': 0.55,
+  'hf-depart': 0.68, 'hf-catch': 0.55, 'hf-ice': 0.45, 'cg-ice': 0.5, 'hf-return': 0.55,
   'hf-ponds': 0.5, 'hf-sample': 0.42, 'hf-harvest': 0.45, 'hf-sort': 0.5,
   'hf-arrive': 0.42, 'hf-reverse': 0.62, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
   'hf-wash': 0.45, 'hf-peel': 0.72, 'hf-fish-wash': 0.6, 'hf-fish-cut': 0.4,
@@ -69,7 +69,7 @@ export const COPY_RIGHT = new Set(['o3', 'p2', 'process', 'port'])
  * Each set is evenly spaced master frames as AVIF stills, sized to its share of the 60 MB path (scripts/clip-frames.sh).
  * Phones keep the video (docs/review/cleanup/AUDIT.md holds the measurement).
  */
-export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'hf-ice', 'hf-return', 'hf-ponds', 'hf-sample', 'hf-harvest', 'hf-sort',
+export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'hf-return', 'hf-ponds', 'hf-sample', 'hf-harvest', 'hf-sort',
   'hf-arrive', 'hf-reverse', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
   'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
   'hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-ship', 'hf-sail']
@@ -93,8 +93,8 @@ const OCEAN_ONLY: ChapterDef[] = [
     captions: caps('o2', [[0.02, 0.98]]),
   },
   {
-    id: 'o3', path: 'ocean', label: 'On ice', vh: 75, joinNext: 'crossfade',
-    media: [{ kind: 'video', id: 'hf-ice', alt: 'Seen from above, the crew kneel on the wet deck sorting tuna and silver fish into iced steel crates.' }],
+    id: 'o3', path: 'ocean', label: 'On ice', vh: 75, joinNext: 'crossfade', scrim: 'cg',
+    media: [{ kind: 'video', id: 'cg-ice', alt: 'On the wet aft deck of the trawler at sunrise, two crew in orange oilskins lay silver fish into rows of steel crates and shovel crushed ice over them.' }],
     captions: caps('o3', [[0.02, 0.98]]),
   },
   {
