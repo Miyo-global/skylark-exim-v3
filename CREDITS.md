@@ -29,3 +29,17 @@ discarded. New look: photoreal-scale cinematic CG (STYLE.md); start frames go to
 | 15 | cg-depart-3 | HD final 1080p, 5 s, high bitrate (test passed) | seedance_2_5 | 80 | 518 |
 
 Phase 1 closed at 518 of 520. No further generation without a new approval.
+
+## Phase 2 (approved 10 Nov 2026): the rest of the 3,000, about 2,482
+
+Plan: 18 shots (Tarun, 10 Nov; reverse merged into arrive, unload into intake on each path, port 5 to 2, ship and sail
+to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 630 spare for retakes. Same flow per shot: 4 frame options, Tarun's pick, 480p test, HD. Credits reported at every 500.
+
+| # | Shot | What | Model | Credits | Running total |
+|---|------|------|-------|---------|---------------|
+| 16 | o2 catch (shot 4) | 4 frame options (O2-A to D), shot 3 last frame as reference | nano_banana_pro 2K | 8 | 526 |
+| 17 | o2 catch (shot 4) | 480p test, 5 s, shot 3 last frame to B (Tarun's pick) | seedance_2_5 | 15 | 541 |
+| 18 | o2 catch (shot 4) | 480p retake, 10 s (5 s test cut mid-shot: failed) | seedance_2_5 | 30 | 571 |
+| 19 | o2 catch (shot 4) | 4 new frame options (E-H) on shot 3's camera line (10 s retake dissolved two trawlers: failed) | nano_banana_pro 2K | 8 | 579 |
+| 20 | o2 catch (shot 4) | 480p test, 5 s, shot 3 last frame to E (Tarun's pick; stop and ask if it fails) | seedance_2_5 | 15 | 594 |
+| 21 | o2 catch (shot 4) | HD final 1080p, 5 s, high bitrate (second sun to be removed in post, 0 credits) | seedance_2_5 | 80 | 674 |

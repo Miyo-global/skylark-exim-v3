@@ -27,6 +27,10 @@ test passes: HD (80). Never straight to HD.
 
 ## Chaining
 
+- The sun sits in the same spot in a shot's start and end frames, or is out of frame in both (Tarun, 10 Nov): a sun
+  that moves between the two keyframes renders as two suns mid-shot (cg-depart-3, o2).
+- Keep the camera on one line between start and end frames: a big orbit plus descent cuts or dissolves (o2 to B).
+
 - A shot's start frame is the last frame of the previous shot's HD final (`ffmpeg -sseof -0.05 … -update 1`).
 - Planned end frames (keyframes) are made first, so each shot gets a start image and an end image.
 - One grade on every clip: `scripts/cg-grade.sh` (same curves and saturation for all clips).
