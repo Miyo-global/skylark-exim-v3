@@ -15,7 +15,8 @@
 #    set is the fallback for a browser without AVIF and keeps its per-frame cap only.
 #    FRAMES=<n> keeps n evenly spaced master frames, so a set costs its share of the path budget. DENOISE=1 adds hqdn3d
 #    before the downscale, for water and grass that stay over the frame cap at the lowest WebP q.
-#    CRF=<n> starts the AVIF ladder at n instead of 39 (the CG sets: CRF=30, they were soft at 39 and 15-21 KB a frame).
+#    CRF=<n> starts the AVIF ladder at n, n+2, n+4, n+6, then 39 (the CG sets: CRF=30 SET_KB=2150, they were soft at 39
+#    and 15-21 KB a frame; 2150 KB a set keeps the ocean path inside 60 MB at 2560).
 #    PRESET=<n> is the SVT-AV1 preset (default 6; 4 is ~25 % smaller at the same SSIM). WEBP_KB=<n> caps each WebP frame
 #    (default the 150 KB frame cap). perf/story-smooth-scroll: every shipped frame (72 a clip, the trimmed ones fewer) at
 #    the set's old bytes: FROM_SHIPPED=1 PRESET=4 SET_KB=<old set> WEBP_KB=<old WebP set / frames>.
@@ -37,7 +38,7 @@ for id in "$@"; do
     mkdir -p "$tmp/$tier"
     ffmpeg -nostdin -v error -y -i "$in" -vf "$vf" -fps_mode vfr -start_number 0 "$tmp/$tier/%03d.png"
     for ext in avif webp; do
-      ladder="${CRF:+$CRF }39 42 45 47 50 52 54 56 58 60"
+      ladder="${CRF:+$CRF $((CRF + 2)) $((CRF + 4)) $((CRF + 6)) }39 42 45 47 50 52 54 56 58 60"
       # SET_KB: a probe pass over every 8th frame picks the first crf whose projected set fits, so the full set is
       # encoded once or twice instead of once per ladder step
       if [ $ext = avif ] && [ -n "${SET_KB:-}" ]; then
