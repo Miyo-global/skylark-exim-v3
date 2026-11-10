@@ -1,6 +1,5 @@
 {
   "opening": 2359,
-  "hf-return": 4557,
   "hf-arrive": 3954,
   "hf-reverse": 4488,
   "hf-unload-fish": 2261,
@@ -33,5 +32,6 @@
   "cg-depart-2": 1757,
   "cg-depart-3": 1596,
   "cg-catch": 2847,
-  "cg-ice": 2847
+  "cg-ice": 2847,
+  "cg-return": 2847
 }
