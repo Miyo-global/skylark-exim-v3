@@ -25,6 +25,10 @@ One fixed style for every /story shot. Paste the style block into every image an
 For each shot: 4 start-frame options (~2 credits each) go to Tarun first. After his pick: one 480p test (15). After the
 test passes: HD (80). Never straight to HD.
 
+Credit guard (Tarun, 11 Nov, 1,677 left for about 10 shots): at most one retake per shot. A shot that fails twice is
+simplified (no people, no sun, camera on one line) or joined with a crossfade, never retaken again. Avoid people and
+sun where possible. Before each shot, state credits left vs needed. Stop and ask if the projected total passes 2,900.
+
 ## Chaining
 
 - The sun sits in the same spot in a shot's start and end frames, or is out of frame in both (Tarun, 10 Nov): a sun
