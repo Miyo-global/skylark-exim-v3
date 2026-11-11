@@ -57,7 +57,7 @@ export const CROP_X: Record<string, number> = {
   'hf-wash': 0.45, 'hf-peel': 0.72, 'hf-fish-wash': 0.6, 'hf-fish-cut': 0.4,
   'hf-lab': 0.4, 'hf-iqf': 0.4, 'hf-pack': 0.45, 'hf-store': 0.6, 'hf-fish-freeze': 0.725,
   'hf-ship': 0.5, 'hf-sail': 0.57,
-  'hf-port-1': 0.42, 'hf-port-2': 0.35, 'hf-port-3': 0.3, 'hf-port-4': 0.45, 'hf-port-5': 0.5,
+  'cg-port': 0.42, 'hf-port-1': 0.42, 'hf-port-2': 0.35, 'hf-port-3': 0.3, 'hf-port-4': 0.45, 'hf-port-5': 0.5,
 }
 
 /** Chapters whose copy sits in a right-hand column instead of bottom-left, for editorial rhythm (redesign §6). */
@@ -72,7 +72,7 @@ export const COPY_RIGHT = new Set(['p1', 'process', 'port'])
 export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'cg-harvest', 'hf-sort',
   'cg-arrive', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
   'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
-  'hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-ship', 'hf-sail']
+  'cg-port', 'hf-ship', 'hf-sail']
 
 const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map((c, i) => ({ ...c, at: ranges[i] }))
 
@@ -204,15 +204,9 @@ const ENDING: ChapterDef[] = [
     captions: caps('docs', [[0.02, 0.98]]).map((c) => ({ ...c, extra: 'doc-cards' as const })),
   },
   {
-    id: 'port', path: 'shared', label: 'The port', vh: 380, joinNext: 'crossfade', scrim: 'soft',
+    id: 'port', path: 'shared', label: 'The port', vh: 200, joinNext: 'crossfade', scrim: 'soft',
     media: [
-      // Five shots of one lift, each a slow forward push. 1 → 2 → 3 run on from each other's last frame; 4 is the box in the
-      // air from a new angle, 5 the port from above.
-      { kind: 'video', id: 'hf-port-1', alt: 'On the quay beside the moored container ship, the crane\'s yellow spreader hangs over a white refrigerated container on its red truck; the camera eases in.' },
-      { kind: 'video', id: 'hf-port-2', alt: 'The camera keeps easing in as the spreader settles onto the top corners of the white container on the truck.' },
-      { kind: 'video', id: 'hf-port-3', alt: 'The crane\'s yellow spreader locks onto the white container and starts to lift it off the trailer.' },
-      { kind: 'video', id: 'hf-port-4', alt: 'The crane hoists the white container up off the truck\'s trailer beside the ship.' },
-      { kind: 'video', id: 'hf-port-5', alt: 'From above: a row of ship-to-shore cranes, the loaded container ship at the quay, and open sea beyond the breakwater.' },
+      { kind: 'video', id: 'cg-port', alt: 'On the quay in the morning haze, a plain white 40-foot refrigerated container waits on an Indian truck under the ship-to-shore cranes beside the moored container ship; the camera eases slowly in.' },
     ],
     captions: caps('port', [[0.02, 0.98]]),
   },
