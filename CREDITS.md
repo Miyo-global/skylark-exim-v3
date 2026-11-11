@@ -61,3 +61,9 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 37 | p1 ponds (shot 7) | 480p test from start frame A (slow forward glide over the pond grid) | seedance_2_5 480p 5 s | 15 | 1067 |
 | 38 | p1 ponds (shot 7) | HD final 1080p, 5 s, high bitrate, from A (480p test passed) | seedance_2_5 | 80 | 1147 |
 | 39 | p2 traceable (shot 8) | 4 end-frame options A-D from p1 last frame (technician testing pond water by the truck) | nano_banana_pro 2K | 8 | 1155 |
+| 40 | p2 traceable (shot 8) | 480p test, p1 last frame to pick B (camera descends to the bank by the truck, technician reads the meter) | seedance_2_5 480p 5 s | 15 | 1170 |
+| 41 | p2 traceable (shot 8) | 4 new end-frame options after test B failed (person out of scale, faded in): E/F no person (meter case by the truck), G/H crouching technician at 1/3 truck height | nano_banana_pro 2K | 8 | 1178 |
+| 42 | p2 traceable (shot 8) | 480p test, p1 last frame to pick E (no person; camera descends to the meter case, truck further back; sun glow toned down in prompt) | seedance_2_5 480p 5 s | 15 | 1193 |
+| 43 | p2 traceable (shot 8) | 2 re-lit versions of end frame E (no sun anywhere, flat hazy horizon) after test E drew a second sun | nano_banana_pro 2K | 4 | 1197 |
+| 44 | p2 traceable (shot 8) | 480p test, p1 last frame to re-lit E1 (no sun anywhere) | seedance_2_5 480p 5 s | 15 | 1212 |
+| 45 | p2 traceable (shot 8) | HD final 1080p, 5 s, high bitrate, to E1 (480p test passed after scripts/cg-sun-cap.py removed the horizon sun and pond reflection) | seedance_2_5 | 80 | 1292 |

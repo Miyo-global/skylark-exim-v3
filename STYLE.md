@@ -29,6 +29,8 @@ test passes: HD (80). Never straight to HD.
 
 - The sun sits in the same spot in a shot's start and end frames, or is out of frame in both (Tarun, 10 Nov): a sun
   that moves between the two keyframes renders as two suns mid-shot (cg-depart-3, o2).
+- Every remaining shot (Tarun, 11 Nov): start and end frames with the sun out of view or fully hidden, never a disc,
+  glow or flare in frame; flat hazy horizon. p2 test E drew a horizon sun, then a second glow at the top edge.
 - Keep the camera on one line between start and end frames: a big orbit plus descent cuts or dissolves (o2 to B).
 
 - A shot's start frame is the last frame of the previous shot's HD final (`ffmpeg -sseof -0.05 … -update 1`).
@@ -56,3 +58,8 @@ Every CG clip, finished and new, goes through `scripts/cg-grade.sh`, never its o
 - No logos or readable text. One vessel per shot.
 - Forward-only actions. No AI errors (extra limbs, merging objects, nets closing on people).
 - Indian right-hand-drive trucks; full-size 40 ft reefer container at the port.
+- Scale check, every shot with people (Tarun, 11 Nov): before any 480p test, measure each person against the nearest
+  vehicle and the palms in the start and end frames. Standing adult ≈ 1.7 m: about 1/2 to 2/3 the height of a
+  full-size Indian reefer truck's box (about 3.5 m), a fraction of a coconut palm (10-20 m). Crouching adult ≈ 1/3 the
+  truck's height. Out of scale = reject the frame. (p2 test B: the technician was almost the truck's height.)
+- A person must be in frame from the first frame of the shot, or walk in from outside the frame. Never fade in.
