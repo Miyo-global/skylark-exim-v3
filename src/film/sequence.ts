@@ -213,10 +213,36 @@ export class Sequence {
     }
   }
 
+  /**
+   * Fetch and decode one frame and nothing else (a neighbour's entry frame, so the cut or crossfade onto it draws at
+   * once). pump() would keep starting fetches across the whole set on every call.
+   */
+  pumpOne(i: number) {
+    if (this.stopped || i < 0 || i >= this.spec.frames || this.bitmaps.has(i) || this.decoding.has(i) || this.fetching.has(i)) return
+    if (this.cached.has(i)) {
+      this.decoding.add(i)
+      send({ k: 'decode', seq: this.spec.id, i, url: this.spec.url(i), hi: true })
+      return
+    }
+    if (net >= PARALLEL) return
+    const q = this.queue.indexOf(i)
+    if (q >= 0) this.queue.splice(q, 1)
+    this.fetching.add(i)
+    this.decoding.add(i)
+    net++
+    send({ k: 'decode', seq: this.spec.id, i, url: this.spec.url(i), hi: true })
+  }
+
   /** a message from the worker */
   take(m: FromWorker) {
-    if (this.fetching.delete(m.i)) net--
+    const freed = this.fetching.delete(m.i)
+    if (freed) net--
     this.decoding.delete(m.i)
+    // a freed slot also restarts the other sets waiting on the shared cap (a prefetch that found it full started
+    // nothing, and its own completions are the only other thing that pumps it); a paused set stays paused
+    if (freed) queueMicrotask(() => {
+      for (const s of sequences.values()) if (s !== this && net < PARALLEL - RESERVE) s.wake()
+    })
     if (m.k === 'failed') return
     if (this.auto && !this.stopped) queueMicrotask(() => this.pump(this.at, false))
     if (!this.cached.has(m.i)) {
@@ -255,6 +281,11 @@ export class Sequence {
     if (this.auto) return
     this.auto = true
     this.pump(this.at, false)
+  }
+
+  /** a prefetching set with frames still to fetch takes a free slot (take(), when another set's fetch finishes) */
+  wake() {
+    if (this.auto && !this.stopped && this.queue.length) this.pump(this.at, false)
   }
 
   /** Stop starting new fetches (in-flight ones finish); prefetch() resumes. The warm cache parks far sets with it. */
@@ -341,9 +372,11 @@ export function createStage(canvas: HTMLCanvasElement) {
     const fade = pos.next && pos.fade ? Math.min(1, pos.fade) : 0
     const close = (hit: { bitmap: ImageBitmap; at: number } | null, j: number) =>
       hit && (pos.slack === undefined || Math.abs(hit.at - j) <= pos.slack) ? hit : null
+    // this set's fallback never shows a frame past a trimmed end (hf-ship: the placard), slack or not
+    const inTrim = (hit: { bitmap: ImageBitmap; at: number } | null) => (hit && hit.at <= end ? hit : null)
     // the frame shown is `base` when it is decoded (the next one blends over it), else the decoded frame nearest the
     // position: never an undecoded frame, never a blank canvas
-    const now = close(pos.seq.nearest(pos.seq.exact(base) ? base : i), i)
+    const now = inTrim(close(pos.seq.nearest(pos.seq.exact(base) ? base : i), i))
     // 1/16 steps: a sixteenth of a frame's change is below what the eye sees, and the stamp stays cheap to compare
     const q = Math.round(frac * 16) / 16
     const over = now && now.at === base && q > 0 ? pos.seq.exact(base + 1) : null

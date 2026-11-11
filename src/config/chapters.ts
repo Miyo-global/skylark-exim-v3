@@ -52,7 +52,7 @@ export const CROP_X: Record<string, number> = {
   'hero-loop': 0.5, opening: 0.5,
   'cg-depart-1': 0.55, 'cg-depart-2': 0.6, 'cg-depart-3': 0.55, 'cg-catch': 0.5,
   'hf-depart': 0.68, 'hf-catch': 0.55, 'hf-ice': 0.45, 'cg-ice': 0.5, 'hf-return': 0.55, 'cg-return': 0.5,
-  'hf-ponds': 0.5, 'cg-ponds': 0.5, 'hf-sample': 0.42, 'cg-sample': 0.35, 'hf-harvest': 0.45, 'hf-sort': 0.5,
+  'hf-ponds': 0.5, 'cg-ponds': 0.5, 'hf-sample': 0.42, 'cg-sample': 0.35, 'hf-harvest': 0.45, 'cg-harvest': 0.4, 'hf-sort': 0.5,
   'hf-arrive': 0.42, 'hf-reverse': 0.62, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
   'hf-wash': 0.45, 'hf-peel': 0.72, 'hf-fish-wash': 0.6, 'hf-fish-cut': 0.4,
   'hf-lab': 0.4, 'hf-iqf': 0.4, 'hf-pack': 0.45, 'hf-store': 0.6, 'hf-fish-freeze': 0.725,
@@ -61,7 +61,7 @@ export const CROP_X: Record<string, number> = {
 }
 
 /** Chapters whose copy sits in a right-hand column instead of bottom-left, for editorial rhythm (redesign §6). */
-export const COPY_RIGHT = new Set(['o3', 'p1', 'process', 'port'])
+export const COPY_RIGHT = new Set(['p1', 'process', 'port'])
 
 /**
  * Clips a desktop plays as a frame sequence on the stage canvas instead of a <video> (src/film/sequence.ts, the Terminal
@@ -69,7 +69,7 @@ export const COPY_RIGHT = new Set(['o3', 'p1', 'process', 'port'])
  * Each set is evenly spaced master frames as AVIF stills, sized to its share of the 60 MB path (scripts/clip-frames.sh).
  * Phones keep the video (docs/review/cleanup/AUDIT.md holds the measurement).
  */
-export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'hf-harvest', 'hf-sort',
+export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'cg-harvest', 'hf-sort',
   'hf-arrive', 'hf-reverse', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
   'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
   'hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-ship', 'hf-sail']
@@ -118,7 +118,7 @@ const POND_ONLY: ChapterDef[] = [
   {
     id: 'p3', path: 'pond', label: 'Harvest', vh: 130, joinNext: 'crossfade',
     media: [
-      { kind: 'video', id: 'hf-harvest', alt: 'Sunrise at a shrimp pond: four workers wade behind the drag net, its line of white floats arcing in front of them; on the bank a crew stacks steel crates beside white ice boxes and a white truck.' },
+      { kind: 'video', id: 'cg-harvest', alt: 'On a pond bund on a hazy morning, the camera glides past a row of crates of fresh shrimp on crushed ice; a green drag net hangs over a crate, draining water into the mud, an aerator sprays behind and a refrigerated truck waits among coconut palms.' },
       { kind: 'video', id: 'hf-sort', alt: 'On the pond bank, workers tip live shrimp onto crushed ice in steel and white crates beside the refrigerated truck.' },
     ],
     captions: caps('p3', [[0.02, 0.98]]),
@@ -149,7 +149,7 @@ const PLANT_POND: ChapterDef[] = [
     captions: caps('process', [[0.02, 0.25], [0.25, 0.5], [0.5, 0.98]]),
   },
   {
-    id: 'coldchain', path: 'pond', label: 'Lab · freeze · pack', vh: 260, joinNext: 'crossfade', scrim: 'soft',
+    id: 'coldchain', path: 'pond', label: 'Lab · freeze · pack', vh: 260, joinNext: 'crossfade', scrim: 'cg',
     // one shot per caption: lab, IQF, packing, cold store (each a quarter of the scroll). Ranges sit on the clip
     // boundaries, so no shot is ever on screen without its caption (#313); captions.ts cuts an outgoing caption the moment
     // its clip leaves, so it never stays over the next shot
@@ -187,7 +187,7 @@ const PLANT_OCEAN: ChapterDef[] = [
   {
     // the cold store gets 75 vh of scroll (675 px at 900 high, its span 0.5 of 150); the freezer push-in crops the front
     // worker's face in its last third, so its scroll stops at 0.6 of the clip
-    id: 'coldchain', path: 'ocean', label: 'Freeze and store', vh: 150, joinNext: 'crossfade', scrim: 'soft',
+    id: 'coldchain', path: 'ocean', label: 'Freeze and store', vh: 150, joinNext: 'crossfade', scrim: 'cg',
     media: [
       { kind: 'video', id: 'hf-fish-freeze', until: 0.6, span: 0.5, alt: 'A worker in a white coat wheels a steel rack of whole fish and tuna loins into the blast freezer as cold vapour rolls out of the open door.' },
       { kind: 'video', id: 'hf-store', alt: 'In the cold store, workers in insulated jackets, hoods and masks walk down an aisle between racks of frosted cartons on wooden pallets; one pulls a pallet jack with a wrapped pallet of cartons.' },

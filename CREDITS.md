@@ -73,3 +73,7 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 49 | p2 traceable (shot 8) | HD final 1080p, 5 s, high bitrate, crossfade start A to end C (480p test passed) | seedance_2_5 | 80 | 1403 |
 | 50 | p3 harvest (shot 9) | 4 end-frame options from p2 last frame (no people: shrimp crates on ice, draining net, aerator spray by the truck; sun hidden) | nano_banana_pro 2K | 8 | 1411 |
 | 51 | p3 harvest (shot 9) | 480p test from start frame B only (crossfade from p2; slow push along the crate row, net draining) | seedance_2_5 480p 5 s | 15 | 1426 |
+| 52 | p3 harvest (shot 9) | HD final 1080p, 5 s, high bitrate, from start frame B (480p test passed) | seedance_2_5 | 80 | 1506 |
+| 53 | plant arrival (CG shot 1 of 5) | 4 start-frame options: reefer truck arriving at the plant loading bay (no people, no sun) | nano_banana_pro 2K | 8 | 1514 |
+| 54 | plant arrival (CG shot 1 of 5) | 480p test from start frame C (plate and box mark painted out first): truck drives forward to the bays, camera follows on one line | seedance_2_5 480p 5 s | 15 | 1529 |
+| 55 | plant arrival (CG shot 1 of 5) | HD final 1080p, 5 s, high bitrate, from start frame C (480p test passed); blank rear plate painted out after, last frame kept as shot 2 start | seedance_2_5 | 80 | 1609 |

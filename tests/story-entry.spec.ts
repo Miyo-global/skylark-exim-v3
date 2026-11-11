@@ -128,7 +128,7 @@ test('reduced motion: a crossfade only, no loops, no floating facts', async ({ b
 })
 
 for (const c of CARDS.filter((c) => c.path)) {
-  test(`${c.id}: "Begin Journey" lands on /story#${c.path} at ${c.first}`, async ({ page }) => {
+  test(`${c.id}: "Enter the story" lands on /story#${c.path} at ${c.first}`, async ({ page }) => {
     const chapterOnScreen = () =>
       page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-chapter]')].find((el) => {
         const r = el.getBoundingClientRect()
@@ -140,7 +140,7 @@ for (const c of CARDS.filter((c) => c.path)) {
     await expect(page.locator(`link[rel="prefetch"][href*="/media/${c.path === 'ocean' ? 'cg-depart-1' : 'cg-ponds'}_"][href*=".mp4"]`)).toHaveCount(1)
     await card(page, c.id).locator('.se-hit').click()
     await settle(page)
-    await page.getByRole('dialog').getByRole('link', { name: 'Begin Journey' }).click()
+    await page.getByRole('dialog').getByRole('link', { name: 'Enter the story', exact: true }).click()
     await page.waitForURL(new RegExp(`/story#${c.path}$`))
     await expect.poll(chapterOnScreen, { timeout: 15_000 }).toBe(c.first)
   })
@@ -160,7 +160,7 @@ test('phone: stacked cards, a tap opens the sheet with its facts in two columns,
   const cols = await page.locator('.se-panel:not([hidden]) .se-widgets').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
   expect(cols).toBe(2)
   // the open sheet is portrait: the 9:16 crop (in the near-square grid card a landscape tier covers more pixels)
-  await expect.poll(() => card(page, 'farmed').locator('img').evaluate((img: HTMLImageElement) => img.currentSrc)).toMatch(/hf-sample-card_m\./)
+  await expect.poll(() => card(page, 'farmed').locator('img').evaluate((img: HTMLImageElement) => img.currentSrc)).toMatch(/cg-sample_m\./)
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).tap()
   await settle(page)
   expect(await isOpen(page, 'farmed')).toBe(false)

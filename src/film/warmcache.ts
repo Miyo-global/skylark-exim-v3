@@ -179,6 +179,9 @@ async function run(p: Path) {
     const share = () => ch1() * 0.9 + (second ? Math.min(1, seqProgress(second.id) / COARSE) : 1) * 0.1
     const total = sets.reduce((a, c) => a + size(c), 0) * OPEN_SHARE
     for (const t0 = performance.now(); share() < 1 && !ctl.signal.aborted && performance.now() - t0 < OPEN_WAIT; ) {
+      // the next chapter's set only to its coarse level here: on a fast line it would otherwise arrive whole before the
+      // first scroll, against the first screen's 8 MB (tests/story-warm-cache.spec.ts)
+      if (second && seqProgress(second.id) >= COARSE) pauseSeq(second.id)
       openingBytes = { have: total * share(), total }
       emit()
       await sleep(50)
@@ -205,15 +208,33 @@ async function run(p: Path) {
     emit()
   }
   const fetching = new Set<string>()
+  // a clip that failed: a 4xx (missing file) is given up for good, anything else (network, 5xx) waits before another
+  // try, longer each time, and is given up after RETRIES. A given-up clip counts as done, so `warm` doesn't wait on it
+  // and it never holds a fetch slot again (the decoders still stream it from the network)
+  const failed = new Set<string>()
+  const retry = new Map<string, { at: number; tries: number }>()
+  const RETRIES = 3
+  const giveUp = (id: string) => (failed.add(id), retry.delete(id))
   const fetchOne = async (c: Clip) => {
     fetching.add(c.id)
     try {
       const res = await fetch(clipUrl(c.id), { signal: ctl.signal, priority: 'low' } as RequestInit)
-      if (!res.ok) return
+      if (!res.ok) {
+        if (res.status >= 400 && res.status < 500) giveUp(c.id)
+        else throw new Error(String(res.status))
+        return
+      }
       const blob = await res.blob()
       if (ctl.signal.aborted) return
+      retry.delete(c.id)
       urls.set(c.id, URL.createObjectURL(blob))
       emit()
+    } catch (e) {
+      if (ctl.signal.aborted) return
+      const tries = (retry.get(c.id)?.tries ?? 0) + 1
+      if (tries >= RETRIES) giveUp(c.id)
+      else retry.set(c.id, { at: performance.now() + 1000 * 2 ** tries, tries })
+      throw e
     } finally {
       fetching.delete(c.id)
     }
@@ -228,7 +249,7 @@ async function run(p: Path) {
   const list = CLIPS[p]
   const stalled = new Set<string>()
   const last = new Map<string, { at: number; since: number }>()
-  const done = (c: Clip) => (isSeq(c.id) ? seqProgress(c.id) >= 1 || stalled.has(c.id) : urls.has(c.id))
+  const done = (c: Clip) => (isSeq(c.id) ? seqProgress(c.id) >= 1 || stalled.has(c.id) : urls.has(c.id) || failed.has(c.id))
   let y = frame.scroll
   let reach = 2
   for (;;) {
@@ -261,7 +282,7 @@ async function run(p: Path) {
       if (!l || l.at !== at) last.set(c.id, { at, since: now })
       else if (now - l.since > STALL) stalled.add(c.id)
     }
-    const vids = win.filter((c) => !isSeq(c.id) && !enough(c) && !fetching.has(c.id)).sort((x, y) => Math.abs(ahead(x)) - Math.abs(ahead(y)) || x.seg - y.seg)
+    const vids = win.filter((c) => !isSeq(c.id) && !enough(c) && !fetching.has(c.id) && !failed.has(c.id) && !((retry.get(c.id)?.at ?? 0) > now)).sort((x, y) => Math.abs(ahead(x)) - Math.abs(ahead(y)) || x.seg - y.seg)
     for (const c of vids.slice(0, Math.max(0, VIDEO - fetching.size))) void fetchOne(c).catch(() => {})
     const caught = win.every(enough) && fetching.size === 0
     if (caught !== warm) {

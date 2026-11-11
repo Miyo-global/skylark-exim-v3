@@ -33,7 +33,9 @@ export function bindPathHash() {
     if (!p) return (landing.pending = false)
     setPath(p, true)
     requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-      landing.y = firstChapterY()
+      // where the page actually is, not where it was sent: on #pond the measured chapter top can still be stale, and
+      // a landing.y the page never reached counted as the visitor's first scroll (whole next sets fetched on arrival)
+      landing.y = Math.round(window.scrollY)
       landing.pending = false
     })))
   }

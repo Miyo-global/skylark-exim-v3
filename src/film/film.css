@@ -48,7 +48,8 @@
 .caption--markets { top: 68px; bottom: 0; height: fit-content; margin: auto 0; width: min(36rem, 44vw); }
 /* phones: the globe takes the top of the screen, the copy stacks under it */
 @media (max-width: 819px) {
-  .caption--markets { top: auto; margin: 0; width: calc(100vw - 2 * var(--gutter)); }
+  /* bottom: above the world cue pill (stage.css, 14px from the bottom), so the pill never sits on the country list */
+  .caption--markets { top: auto; bottom: 82px; margin: 0; width: calc(100vw - 2 * var(--gutter)); }
   .caption--markets .caption__eyebrow { margin-bottom: 0.6rem; }
   .caption--markets .caption__title { font-size: clamp(2.25rem, 10vw, 2.75rem); }
 }

@@ -17,11 +17,14 @@
    Transform and opacity only (scaleY on the panel, `translate` on the items, which composes with their own transforms). */
 .topbar::after {
   content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; transform-origin: top;
-  background: rgba(7, 31, 38, 0.88);
+  /* near-solid and blurred: copy scrolling under the bar must not read through it (owner review, 11 Nov) */
+  background: rgba(7, 31, 38, 0.94); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
   border-bottom: 1px solid var(--hairline); opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.topbar.is-light::after { background: rgba(244, 239, 230, 0.92); border-bottom-color: var(--hairline-ink); }
+.topbar.is-light::after { background: rgba(244, 239, 230, 0.96); border-bottom-color: var(--hairline-ink); }
+/* the pages with the page header: every in-page jump (anchors, scrollIntoView, focus) lands below the 68 px bar */
+:root:has(.topbar.is-page) { scroll-padding-top: 68px; }
 .topbar.is-scrolled::after { opacity: 1; transform: scaleY(0.8235); }
 .topbar.is-scrolled::before { opacity: 0; }
 .brand, .path-toggle, .menu-btn, .nav, .quote-cta { transition: translate var(--dur-fast) var(--ease-out); }

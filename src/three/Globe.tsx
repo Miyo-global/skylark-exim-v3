@@ -224,7 +224,7 @@ function Earth({ worldIndex, labels, live, onWarm }: { worldIndex: number; label
       if (!cap?.height) return
       if (env.mobile) {
         // phones: the globe sits above the market list
-        lay.r = Math.max(60, Math.min(vw * 0.4, (cap.top - HEADER) / 2 - 10))
+        lay.r = Math.max(24, Math.min(vw * 0.4, (cap.top - HEADER) / 2 - 10))
         lay.cx = vw / 2
         lay.cy = (HEADER + cap.top) / 2
       } else {
@@ -375,7 +375,9 @@ function Earth({ worldIndex, labels, live, onWarm }: { worldIndex: number; label
       }
 
       // camera: close over the sea off Visakhapatnam → the full globe at its laid-out size and place
-      const k = ease(clamp01(p / 0.5))
+      // phones: the list shows from 0.08 of the chapter (chapters.ts), so the globe is at its laid-out size by then and
+      // never sits over the list
+      const k = ease(clamp01(p / (env.mobile ? 0.08 : 0.5)))
       const dEnd = Math.sqrt(1 + (vh / (2 * TAN * lay.r)) ** 2)
       const d = lerp(1.45, dEnd, k)
       camera.position.set(0, 0, d)

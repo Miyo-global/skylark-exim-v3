@@ -1,4 +1,3 @@
-import gsap from 'gsap'
 import { env } from '../engine/env'
 import { frame, store } from '../engine/store'
 import { landing } from '../engine/path'
@@ -48,6 +47,8 @@ const HOLD = 250
 const FAST = 30
 /** share of a segment's scroll the dip to the veil takes on each side of a chapter join */
 const DIP = 0.025
+/** share of a segment's scroll the canvas crossfade into the next chapter's frame set takes (its last XF) */
+const XF = 0.06
 const light = env.mobile || env.saveData || env.slow
 /** decoders on the stage (ScrubStage renders this many <video>s) */
 export const POOL = env.mobile ? 4 : 5
@@ -331,9 +332,18 @@ function tick() {
     for (const id of ahead) slotFor(id, keep, i)
     for (const id of behindVideo) slotFor(id, keep, i)
   }
-  setShown(active && active.painted && !active.dead ? active : null)
+  // Never an empty stage: until this segment has a picture of its own (its decoder painted, or its poster/still loaded),
+  // the previous picture stays up, whether that is a decoder or the sequence canvas.
+  const ready = layerReady(i)
+  const painted = !!(active && active.painted && !active.dead)
+  setShown(painted ? active : ready || seqNow ? null : shown)
   // the sequence clip on screen, and the sets coming up (fetch only); every other set gives back its bitmaps
   const nextSeg = segs[i + 1]
+  // a crossfade into the next chapter, when both sides are frame sets: the next set's entry frame fades in over this
+  // one on the canvas over the last XF of the segment (both are decoded pictures, so no blank or teal frame between)
+  const nextClip = videoId(i + 1)
+  const crossTo =
+    seqNow && seg.join === 'crossfade' && nextSeg && nextSeg.chapter !== seg.chapter && nextClip && isSeq(nextClip) ? seqFor(nextClip) : null
   let drawn = -1
   if (seqNow && seqStage && clip) {
     const sq = seqFor(clip)
@@ -343,7 +353,11 @@ function tick() {
       const slack = playFrom(seg) > 0 || playUntil(seg) < 1 ? 2 : undefined
       // a clip trimmed with `until` never blends in a frame past its end (hf-ship: the placard after frame 28)
       const last = playUntil(seg) < 1 ? Math.floor(seqAt(1, sq.spec.frames, playUntil(seg), playFrom(seg)) * (sq.spec.frames - 1)) : undefined
-      drawn = seqStage.draw({ seq: sq, at, slack, last })
+      const fade = crossTo ? Math.max(0, (p - (1 - XF)) / XF) : 0
+      // the next set is handed to the stage only near the join: draw() pumps it, and from the top of the chapter that
+      // fetched a whole next set before the first scroll (the entry frame is decoded ahead by pumpEntry anyway)
+      const xNext = crossTo && p >= 1 - 2 * XF ? crossTo : undefined
+      drawn = seqStage.draw({ seq: sq, at, slack, last, next: xNext, fade: xNext ? fade : 0 })
       probe.target = sq.index(at) / 24
     }
   }
@@ -357,13 +371,22 @@ function tick() {
       if (!id || !isSeq(id)) continue
       const sq = seqFor(id)
       if (!sq) break
+      // before the first scroll a neighbour gets only its entry frame here: the warm cache brings the next chapter to
+      // its coarse level, and a whole next set fetched now would count against the first screen (story-warm-cache)
+      if (!scrolled && id !== clip) {
+        pumpEntry(id)
+        continue
+      }
       sq.prefetch()
       if (id !== clip) up ? sq.pump(sq.spec.frames - 1) : pumpEntry(id)
       if (!sq.complete) break
     }
   }
   for (const [id, sq] of seqs) if (id !== clip && !near.includes(id) && !ahead2.includes(id) && !behind.includes(id)) sq.release()
-  const on = drawn >= 0
+  // the canvas keeps the last frame it drew while this segment's own picture isn't ready yet (a set still decoding, a
+  // poster still loading): the hold, instead of the stage's teal background
+  const hold = seqOn && drawn < 0 && !painted && !ready
+  const on = drawn >= 0 || hold
   if (seqCanvas && on !== seqOn) seqCanvas.style.opacity = (seqOn = on) ? '1' : '0'
   if (seqCanvas && on) {
     seqCanvas.dataset.frame = String(drawn)
@@ -376,10 +399,10 @@ function tick() {
   probe.id = clip
   probe.chapter = seg.chapter
   probe.local = frame.local
-  probe.shown = seqNow ? on : shown !== null && shown === active
-  // something is on screen: the clip's decoder, or the layer under it (a poster, a still, a gradient or the globe)
-  const layer = posters[i]
-  probe.painted = probe.shown || (layer instanceof HTMLImageElement ? layer.complete && layer.naturalWidth > 0 : !!layer)
+  probe.shown = seqNow ? drawn >= 0 : shown !== null && shown === active
+  // something is on screen: the clip's decoder, the layer under it (a poster, a still, a gradient or the globe), or the
+  // previous picture held until one of those is ready
+  probe.painted = probe.shown || ready || on || shown !== null
 
   // placeholders (stills and the port/sea gradients): slow push-in
   const m = seg.media
@@ -392,12 +415,15 @@ function tick() {
     if (cover.style.opacity !== want) cover.style.opacity = want
   }
 
-  // Joins never overlap two pictures, so nothing can show as a ghost or a double exposure. Inside a chapter: a straight
-  // cut. Between chapters: the picture dips to the veil over the last DIP of the segment and back over the first DIP of
-  // the next one, tied to the scroll, so it plays the same in both directions and a fast scroll passes straight through.
+  // Joins between two frame sets crossfade on the canvas (above); every other join is a straight cut that holds the
+  // previous picture until the next one is ready. Only the globe join still dips, through the light veil (the globe is
+  // a DOM layer the canvas can't blend), tied to the scroll so it plays the same in both directions.
   const prevSeg = segs[i - 1]
-  const dipIn = prevSeg?.join === 'crossfade' && prevSeg.chapter !== seg.chapter ? Math.max(0, 1 - p / DIP) : 0
-  const dipOut = seg.join === 'crossfade' && nextSeg && nextSeg.chapter !== seg.chapter ? Math.max(0, (p - (1 - DIP)) / DIP) : 0
+  const globeJoin = (a?: Segment, b?: Segment) => a?.media.kind === 'globe' || b?.media.kind === 'globe'
+  const dipIn =
+    prevSeg?.join === 'crossfade' && prevSeg.chapter !== seg.chapter && globeJoin(prevSeg, seg) ? Math.max(0, 1 - p / DIP) : 0
+  const dipOut =
+    seg.join === 'crossfade' && nextSeg && nextSeg.chapter !== seg.chapter && globeJoin(seg, nextSeg) ? Math.max(0, (p - (1 - DIP)) / DIP) : 0
   const d = Math.max(dipIn, dipOut)
   if (d !== dip && veil) veil.style.opacity = String((dip = d))
   // the stage turns light (no dark scrim) once the globe owns the frame; the veil is light either side of that join
@@ -468,8 +494,8 @@ function pumpEntry(id: string) {
   const sq = seqFor(id)
   if (!sq) return
   const seg = segs.find((s) => s.media.kind === 'video' && s.media.id === id)
-  if (!seg) return sq.pump(0)
-  sq.pump(sq.index(seqAt(0, sq.spec.frames, playUntil(seg), playFrom(seg))))
+  if (!seg) return sq.pumpOne(0)
+  sq.pumpOne(sq.index(seqAt(0, sq.spec.frames, playUntil(seg), playFrom(seg))))
 }
 
 function seek(s: Slot, p: number, vel: number, until = 1, from = 0) {
@@ -517,6 +543,13 @@ function nearestBuffered(v: HTMLVideoElement, t: number) {
   return best
 }
 
+/** Segment k's own layer can show a picture now: a loaded poster/still image, or a gradient, desk or globe layer. */
+function layerReady(k: number) {
+  const el = posters[k]
+  if (!el) return false
+  return el instanceof HTMLImageElement ? el.complete && el.naturalWidth > 0 : true
+}
+
 /** Every stage layer to opacity 0 except `keep`. */
 function clearLayers(keep: number) {
   posters.forEach((el, k) => {
@@ -549,8 +582,7 @@ function enter(i: number, prev: number) {
   loadPosters(i)
   // the frame under the scroll, whichever way the segment is entered
   if (posters[i]) posters[i]!.style.opacity = '1'
-  // intentional cut (documentation → port): 250 ms fade through the page colour
-  const crossedCut = prev >= 0 && (segs[Math.min(i, prev)].join === 'cut')
-  if (crossedCut && veil) gsap.fromTo(veil, { opacity: 1 }, { opacity: 0, duration: 0.25, ease: 'none' })
+  // an intentional cut (documentation → port) is a straight cut too: no flash through the page colour, the previous
+  // picture holds until the next one is ready (tick)
   cur = i
 }

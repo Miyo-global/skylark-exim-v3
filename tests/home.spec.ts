@@ -13,7 +13,7 @@ const ready = async (page: Page) => {
  * #268), its posters' end frames. The story warm-up after the intro (home/prefetch.ts warmStory, #preload) fetches the
  * first clips of the active path into the HTTP cache: a `fetch`, not the page playing or loading the film, so it is left out.
  */
-const isStory = (url: string) => /\/assets\/(story|Story)-|\/media\/(?!hero-loop_|hf-catch-card_|hf-sample_)[^/]+\.mp4(\?|$)/.test(url)
+const isStory = (url: string) => /\/assets\/(story|Story)-|\/media\/(?!hero-loop_|cg-catch_|cg-sample_)[^/]+\.mp4(\?|$)/.test(url)
 
 /** the chapter whose box covers the top of the viewport on /story */
 const chapterOnScreen = (page: Page) =>

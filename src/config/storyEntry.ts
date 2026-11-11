@@ -41,12 +41,11 @@ export const ENTRY_CARDS: EntryCard[] = [
     cta: 'Enter the story',
     heading: 'Wild catch',
     sub: 'Marine fish from the fishing vessels, through our plant at Anandapuram, to the port.',
-    start: { label: 'Begin Journey', href: '/story#ocean' },
-    // hf-catch-card: a crop of the hf-catch master at its native pixels (scripts/encode-hf.sh SRC_CROP 1920:1080:640:0,
-    // phone M_CROP 670:1192:1200:0) that leaves out the deck crates and the bin at the left edge in every frame
-    clip: 'hf-catch-card',
+    start: { label: 'Enter the story', href: '/story#ocean' },
+    // the CG film's own catch shot (chapter 02), so the card matches the story it opens
+    clip: 'cg-catch',
     top: 1920,
-    alt: 'On deck, the crew lean back and haul a dripping net of silver fish in over the rail, the open sea behind them.',
+    alt: 'At dawn on the open sea, a wooden trawler hauls its net of silver fish up the stern ramp.',
     widgets: [
       { label: 'Range', value: 'Marine fish', src: 53 },
       { label: 'Species', value: 'Indian Mackerel · Tuna · Seer Fish · Squid', src: 53 },
@@ -63,13 +62,10 @@ export const ENTRY_CARDS: EntryCard[] = [
     cta: 'Enter the story',
     heading: 'Farmed shrimp',
     sub: 'From partner farms, through our plant at Anandapuram, to the port.',
-    start: { label: 'Begin Journey', href: '/story#pond' },
-    // hf-sample, not hf-ponds: the ponds aerial has a truck mid-frame whose driving side can't be checked
-    clip: 'hf-sample',
-    // the card's own stills of hf-sample's first frame, each under 250 KB (scripts/stills.py CAP_KB=250); the clip's
-    // 1920 poster is 326 KB
-    still: 'hf-sample-card',
-    alt: 'A farm technician crouches on the pond bank reading a handheld water meter, aerators churning the pond behind him.',
+    start: { label: 'Enter the story', href: '/story#pond' },
+    // the CG film's own pond-bank shot (chapter 02); its 1920 poster is 201 KB, under the card's 250 KB, so no card stills
+    clip: 'cg-sample',
+    alt: 'A grey water-testing meter case on a muddy pond bank, its probe cable in the water, an aerator churning behind and a refrigerated truck among the palms.',
     widgets: [
       { label: 'Species', value: 'Vannamei · Black Tiger', src: 55 },
       { label: 'Partners', value: 'Strategic partnerships with aquaculture farmers', src: 29 },
