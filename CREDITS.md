@@ -67,3 +67,4 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 43 | p2 traceable (shot 8) | 2 re-lit versions of end frame E (no sun anywhere, flat hazy horizon) after test E drew a second sun | nano_banana_pro 2K | 4 | 1197 |
 | 44 | p2 traceable (shot 8) | 480p test, p1 last frame to re-lit E1 (no sun anywhere) | seedance_2_5 480p 5 s | 15 | 1212 |
 | 45 | p2 traceable (shot 8) | HD final 1080p, 5 s, high bitrate, to E1 (480p test passed after scripts/cg-sun-cap.py removed the horizon sun and pond reflection) | seedance_2_5 | 80 | 1292 |
+| 46 | p2 traceable (shot 8) | 4 low start-frame options for a crossfade from p1 (HD sun post fix not clean: smudges or residual glow), sun out of view, ending on E1 | nano_banana_pro 2K | 8 | 1300 |

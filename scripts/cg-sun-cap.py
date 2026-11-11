@@ -9,6 +9,7 @@ untouched (e.g. the white truck). Used on:
   p2 (cg-sample) 480p test E1  --zone 0:237:74:48:26 20:240:70:48:26 40:252:70:48:26
                                --zone 38:282:112:72:60 51:290:160:72:60 61:294:150:72:60 81:294:140:72:60 120:294:138:72:60
                                --zone 58:268:224:70:40 69:321:237:62:32 85:310:231:62:36 101:312:252:62:56 120:318:250:62:52 --xmax 362
+  p2 HD: Lab fill + --lift 25/40 still left grey blotches or a soft glow, so p2 went to a crossfade instead.
 ponytail: hand-measured zones per take; re-measure on the HD (scale x, y, rx, ry by width/854).
 """
 import argparse, subprocess
@@ -20,6 +21,7 @@ ap.add_argument('--zone', nargs='+', action='append', required=True)
 ap.add_argument('--xmax', type=int, default=None)
 ap.add_argument('--ramp', type=int, default=8)
 ap.add_argument('--keep', type=float, default=0.15, help='share of the brightness above the haze that stays')
+ap.add_argument('--lift', type=float, default=0, help='Lab L units above the haze left untouched (spares sunlit water around the core)')
 a = ap.parse_args()
 
 def zone(pts):
@@ -50,16 +52,22 @@ while True:
         if a.xmax is not None:
             mask[:, a.xmax:] = 0
         hard = (mask > 0).astype(np.uint8)
-        v = img.max(axis=2).astype(np.float32)
-        s = 8  # haze level: inpaint the zone on a small blurred brightness map
-        small = cv2.resize(cv2.GaussianBlur(v, (0, 0), 3), (w // s, h // s), interpolation=cv2.INTER_AREA)
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB).astype(np.float32)
+        s = max(8, w // 107)  # haze: inpaint the zone on small blurred L, a, b maps (8 px at 854 wide)
         hole = cv2.dilate(cv2.resize(hard, (w // s, h // s), interpolation=cv2.INTER_NEAREST), np.ones((3, 3), np.uint8))
-        haze = cv2.inpaint(np.clip(small, 0, 255).astype(np.uint8), hole, 5, cv2.INPAINT_TELEA).astype(np.float32)
-        haze = cv2.GaussianBlur(cv2.resize(haze, (w, h), interpolation=cv2.INTER_CUBIC), (0, 0), 6)
-        capped = np.where(v > haze, haze + (v - haze) * a.keep, v)
-        m = cv2.GaussianBlur(mask, (0, 0), 8)
-        ratio = (1 - m) + m * capped / np.maximum(v, 1)
-        img = np.clip(img * ratio[..., None], 0, 255).astype(np.uint8)
+        def fill(ch):
+            small = cv2.resize(cv2.GaussianBlur(ch, (0, 0), 3 * s / 8), (w // s, h // s), interpolation=cv2.INTER_AREA)
+            f_ = cv2.inpaint(np.clip(small, 0, 255).astype(np.uint8), hole, 5, cv2.INPAINT_TELEA).astype(np.float32)
+            return cv2.GaussianBlur(cv2.resize(f_, (w, h), interpolation=cv2.INTER_CUBIC), (0, 0), 6 * s / 8)
+        L, haze = lab[..., 0], fill(lab[..., 0]) + a.lift
+        over = np.clip((L - haze) / 20, 0, 1)  # how much of the pixel is sun, not haze
+        m = cv2.GaussianBlur(mask, (0, 0), 8 * s / 8)
+        out = lab.copy()
+        out[..., 0] = np.where(L > haze, haze + (L - haze) * a.keep, L)
+        for c in (1, 2):  # the capped sun core is near white: give it the haze's warm tint, not grey
+            out[..., c] = lab[..., c] * (1 - over) + fill(lab[..., c]) * over
+        lab = lab * (1 - m[..., None]) + out * m[..., None]
+        img = cv2.cvtColor(np.clip(lab, 0, 255).astype(np.uint8), cv2.COLOR_LAB2BGR)
     ff.stdin.write(img.tobytes())
     f += 1
 ff.stdin.close(); ff.wait()
