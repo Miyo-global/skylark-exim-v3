@@ -76,7 +76,7 @@ test('hovering a story link prefetches the story chunk and that path\'s first cl
   const b = (await card.boundingBox())!
   await page.mouse.move(b.x + b.width / 2 + 6, b.y + b.height / 2, { steps: 3 }) // a real move: a still pointer under a scroll does not count
   await expect(page.locator('link[rel="modulepreload"][href*="/assets/Story-"]')).toHaveCount(1)
-  await expect(page.locator('link[rel="prefetch"][href*="/media/hf-ponds_"][href*=".mp4?v="]')).toHaveCount(1)
+  await expect(page.locator('link[rel="prefetch"][href*="/media/cg-ponds_"][href*=".mp4?v="]')).toHaveCount(1)
   await expect(page.locator('link[rel="prefetch"][href*="/media/cg-depart-1_"]')).toHaveCount(0)
 })
 

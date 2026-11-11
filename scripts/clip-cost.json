@@ -17,7 +17,6 @@
   "hf-port-5": 3500,
   "hf-ship": 6442,
   "hf-sail": 2795,
-  "hf-ponds": 4484,
   "hf-sample": 5491,
   "hf-harvest": 8017,
   "hf-sort": 6664,
@@ -33,5 +32,6 @@
   "cg-depart-3": 1596,
   "cg-catch": 2847,
   "cg-ice": 2847,
-  "cg-return": 2847
+  "cg-return": 2847,
+  "cg-ponds": 2847
 }

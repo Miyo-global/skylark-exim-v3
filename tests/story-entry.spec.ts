@@ -137,7 +137,7 @@ for (const c of CARDS.filter((c) => c.path)) {
     await atSection(page)
     await hoverCard(page, c.id)
     // hovering the card warms its path: the story chunk and that path's first clip
-    await expect(page.locator(`link[rel="prefetch"][href*="/media/${c.path === 'ocean' ? 'cg-depart-1' : 'hf-ponds'}_"][href*=".mp4"]`)).toHaveCount(1)
+    await expect(page.locator(`link[rel="prefetch"][href*="/media/${c.path === 'ocean' ? 'cg-depart-1' : 'cg-ponds'}_"][href*=".mp4"]`)).toHaveCount(1)
     await card(page, c.id).locator('.se-hit').click()
     await settle(page)
     await page.getByRole('dialog').getByRole('link', { name: 'Begin Journey' }).click()

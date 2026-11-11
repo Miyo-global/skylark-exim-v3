@@ -4,14 +4,15 @@ import { test, expect } from '@playwright/test'
 // behind the caption). For each visible caption line: hide the captions, screenshot the stage, and measure the
 // background under that line's box. The 90th-percentile background luminance must give ≥ 4.5:1 for body copy and the
 // eyebrow, ≥ 3:1 for the large title. Text shadows are ignored, so this is the conservative case.
-const CHAPTERS = ['o1', 'o2', 'o3', 'o4']
+// the CG chapters per path; add each chapter as it turns CG
+const PATHS = { ocean: ['o1', 'o2', 'o3', 'o4'], pond: ['p1'] }
 const VIEWS = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } }
 
-for (const [name, viewport] of Object.entries(VIEWS)) {
-  test(`CG caption contrast ${name}`, async ({ browser }) => {
+for (const [name, viewport] of Object.entries(VIEWS)) for (const [path, CHAPTERS] of Object.entries(PATHS)) {
+  test(`CG caption contrast ${name} ${path}`, async ({ browser }) => {
     test.setTimeout(120_000)
     const page = await (await browser.newContext({ viewport, isMobile: name === 'phone', hasTouch: name === 'phone' })).newPage()
-    await page.goto('/story#ocean', { waitUntil: 'load' })
+    await page.goto(`/story#${path}`, { waitUntil: 'load' })
     await page.waitForFunction(() => !document.querySelector('#boot'), null, { timeout: 60_000 }).catch(() => {})
     await page.waitForTimeout(3000)
     const results: string[] = []

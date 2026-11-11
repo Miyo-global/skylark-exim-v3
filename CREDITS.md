@@ -58,3 +58,6 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 34 | o4 back to Vizag (shot 6) | 480p test, chapter 03 last frame to pick C (camera rises and pulls back over the trawler) | seedance_2_5 480p 5 s | 15 | 964 |
 | 35 | o4 back to Vizag (shot 6) | HD final 1080p, 5 s, high bitrate, to C (480p test passed). Crosses 1,000: reported to Tarun | seedance_2_5 | 80 | 1044 |
 | 36 | p1 ponds (shot 7) | 4 start-frame options A-D (pond path opens fresh: A/B high grid, C/D low over aerators) | nano_banana_pro 2K | 8 | 1052 |
+| 37 | p1 ponds (shot 7) | 480p test from start frame A (slow forward glide over the pond grid) | seedance_2_5 480p 5 s | 15 | 1067 |
+| 38 | p1 ponds (shot 7) | HD final 1080p, 5 s, high bitrate, from A (480p test passed) | seedance_2_5 | 80 | 1147 |
+| 39 | p2 traceable (shot 8) | 4 end-frame options A-D from p1 last frame (technician testing pond water by the truck) | nano_banana_pro 2K | 8 | 1155 |

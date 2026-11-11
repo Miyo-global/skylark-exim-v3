@@ -40,7 +40,7 @@
    tests/story-caption-contrast checks the copy over it. Phones: a bottom shade under the full-width caption. */
 .stage.is-cg .stage__scrim {
   --corner: 0% 82%;
-  background: radial-gradient(46% 64% at var(--corner), rgba(0, 0, 0, 0.66) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0) 100%);
+  background: radial-gradient(46% 64% at var(--corner), rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.58) 55%, rgba(0, 0, 0, 0) 100%);
 }
 .stage.is-cg.is-right .stage__scrim { --corner: 100% 82%; }
 @media (max-width: 819px) {
