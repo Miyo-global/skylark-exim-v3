@@ -84,3 +84,10 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 60 | port (CG shot 3 of 5) | 480p retake from D (the shot's one retake): truck drives forward toward the ship, camera on a straight sideways track; first test had the truck parked and an arcing camera | seedance_2_5 480p 5 s | 15 | 1663 |
 | 61 | port (CG shot 3 of 5) | HD fallback 1080p, 5 s, high bitrate, from D: truck parked under the crane, slow straight dolly-in (the retake left the truck parked again; no further retakes) | seedance_2_5 | 80 | 1743 |
 | 62 | ship departure (CG shot 4 of 5) | 4 start-frame options: one container ship leaving the port, seen from the water off its stern quarter, no sun, no text | nano_banana_pro 2K | 8 | 1751 |
+| 63 | ship departure (CG shot 4 of 5) | 480p test from start frame D (stern draught marks painted out first): ship steams forward to sea, camera follows on one line, cranes stay solid | seedance_2_5 480p 5 s | 15 | 1766 |
+| 64 | final hero (CG shot 5 of 5) | 4 start-frame options: the same ship alone on the open sea, high wide aerial, long wake, no land, no sun, no text | nano_banana_pro 2K | 8 | 1774 |
+| 65 | ship departure (CG shot 4 of 5) | 480p retake (the shot's one retake): locked still camera, ship pulls away and gets smaller; first test kept the ship the same size | seedance_2_5 480p 5 s | 15 | 1789 |
+| 66 | final hero (CG shot 5 of 5) | 480p test from start frame A (two bow marks and a faint name row painted out first): ship sails on, camera rises and drifts back on one line | seedance_2_5 480p 5 s | 15 | 1804 |
+| 67 | ship departure (CG shot 4 of 5) | HD final 1080p, 5 s, high bitrate, from D (480p retake passed): locked camera, ship pulls away | seedance_2_5 | 80 | 1884 |
+| 68 | final hero (CG shot 5 of 5) | 480p retake (the shot's one retake): straight pull-back and rise, level horizon, no tilt; first test tilted up | seedance_2_5 480p 5 s | 15 | 1899 |
+| 69 | final hero (CG shot 5 of 5) | HD 1080p, 5 s, high bitrate, retake prompt (the better take); the camera still tilts up, so the tilt is held out in post (no further retakes) | seedance_2_5 | 80 | 1979 |

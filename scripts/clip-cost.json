@@ -37,5 +37,7 @@
   "cg-sample": 2847,
   "cg-harvest": 2847,
   "cg-arrive": 3954,
-  "cg-port": 3882
+  "cg-port": 3882,
+  "cg-ship": 6442,
+  "cg-sail": 3500
 }

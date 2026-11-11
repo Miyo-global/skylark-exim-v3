@@ -56,7 +56,7 @@ export const CROP_X: Record<string, number> = {
   'hf-arrive': 0.42, 'hf-reverse': 0.62, 'cg-arrive': 0.6, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
   'hf-wash': 0.45, 'hf-peel': 0.72, 'hf-fish-wash': 0.6, 'hf-fish-cut': 0.4,
   'hf-lab': 0.4, 'hf-iqf': 0.4, 'hf-pack': 0.45, 'hf-store': 0.6, 'hf-fish-freeze': 0.725,
-  'hf-ship': 0.5, 'hf-sail': 0.57,
+  'hf-ship': 0.5, 'cg-ship': 0.5, 'hf-sail': 0.57, 'cg-sail': 0.5,
   'cg-port': 0.42, 'hf-port-1': 0.42, 'hf-port-2': 0.35, 'hf-port-3': 0.3, 'hf-port-4': 0.45, 'hf-port-5': 0.5,
 }
 
@@ -72,7 +72,7 @@ export const COPY_RIGHT = new Set(['p1', 'process', 'port'])
 export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'cg-harvest', 'hf-sort',
   'cg-arrive', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
   'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
-  'cg-port', 'hf-ship', 'hf-sail']
+  'cg-port', 'cg-ship', 'cg-sail']
 
 const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map((c, i) => ({ ...c, at: ranges[i] }))
 
@@ -211,10 +211,10 @@ const ENDING: ChapterDef[] = [
     captions: caps('port', [[0.02, 0.98]]),
   },
   {
-    id: 'sea', path: 'shared', label: 'At sea', vh: 130, joinNext: 'crossfade',
+    id: 'sea', path: 'shared', label: 'At sea', vh: 200, joinNext: 'crossfade',
     media: [
-      { kind: 'video', id: 'hf-ship', until: 0.4, alt: 'From high on the crane, the camera looks down on the loaded container ship\'s stacked containers and white bridge as it pulls away from the quay.' },
-      { kind: 'video', id: 'hf-sail', alt: 'Seen from straight above, the loaded container ship sails alone across deep blue water, trailing a white wake.' },
+      { kind: 'video', id: 'cg-ship', alt: 'From the water off the port, the loaded container ship steams away toward the open sea, growing smaller against the hazy cranes on the shore.' },
+      { kind: 'video', id: 'cg-sail', alt: 'High above the open sea, the loaded container ship sails on alone under a hazy sky, its long white wake trailing back toward the horizon.' },
     ],
     captions: caps('sea', [[0.02, 0.98]]),
   },
