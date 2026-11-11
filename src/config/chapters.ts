@@ -52,7 +52,7 @@ export const CROP_X: Record<string, number> = {
   'hero-loop': 0.5, opening: 0.5,
   'cg-depart-1': 0.55, 'cg-depart-2': 0.6, 'cg-depart-3': 0.55, 'cg-catch': 0.5,
   'hf-depart': 0.68, 'hf-catch': 0.55, 'hf-ice': 0.45, 'cg-ice': 0.5, 'hf-return': 0.55, 'cg-return': 0.5,
-  'hf-ponds': 0.5, 'cg-ponds': 0.5, 'hf-sample': 0.42, 'hf-harvest': 0.45, 'hf-sort': 0.5,
+  'hf-ponds': 0.5, 'cg-ponds': 0.5, 'hf-sample': 0.42, 'cg-sample': 0.35, 'hf-harvest': 0.45, 'hf-sort': 0.5,
   'hf-arrive': 0.42, 'hf-reverse': 0.62, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
   'hf-wash': 0.45, 'hf-peel': 0.72, 'hf-fish-wash': 0.6, 'hf-fish-cut': 0.4,
   'hf-lab': 0.4, 'hf-iqf': 0.4, 'hf-pack': 0.45, 'hf-store': 0.6, 'hf-fish-freeze': 0.725,
@@ -61,7 +61,7 @@ export const CROP_X: Record<string, number> = {
 }
 
 /** Chapters whose copy sits in a right-hand column instead of bottom-left, for editorial rhythm (redesign §6). */
-export const COPY_RIGHT = new Set(['o3', 'p1', 'p2', 'process', 'port'])
+export const COPY_RIGHT = new Set(['o3', 'p1', 'process', 'port'])
 
 /**
  * Clips a desktop plays as a frame sequence on the stage canvas instead of a <video> (src/film/sequence.ts, the Terminal
@@ -69,7 +69,7 @@ export const COPY_RIGHT = new Set(['o3', 'p1', 'p2', 'process', 'port'])
  * Each set is evenly spaced master frames as AVIF stills, sized to its share of the 60 MB path (scripts/clip-frames.sh).
  * Phones keep the video (docs/review/cleanup/AUDIT.md holds the measurement).
  */
-export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'hf-sample', 'hf-harvest', 'hf-sort',
+export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'hf-harvest', 'hf-sort',
   'hf-arrive', 'hf-reverse', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
   'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
   'hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-ship', 'hf-sail']
@@ -111,8 +111,8 @@ const POND_ONLY: ChapterDef[] = [
     captions: caps('p1', [[0, 0.98]]),
   },
   {
-    id: 'p2', path: 'pond', label: 'Traceable', vh: 75, joinNext: 'crossfade',
-    media: [{ kind: 'video', id: 'hf-sample', alt: 'A farm technician crouches on the pond bank and reads a handheld water meter, its probe hanging on a cable into the pond, aerators churning behind him.' }],
+    id: 'p2', path: 'pond', label: 'Traceable', vh: 75, joinNext: 'crossfade', scrim: 'cg',
+    media: [{ kind: 'video', id: 'cg-sample', alt: 'Low over a muddy pond bank on a hazy morning, the camera glides toward a grey water-testing meter case whose probe cable runs into the pond; an aerator churns the water and a white refrigerated truck waits on the bund road among coconut palms.' }],
     captions: caps('p2', [[0.02, 0.98]]),
   },
   {

@@ -70,3 +70,6 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 46 | p2 traceable (shot 8) | 4 low start-frame options for a crossfade from p1 (HD sun post fix not clean: smudges or residual glow), sun out of view, ending on E1 | nano_banana_pro 2K | 8 | 1300 |
 | 47 | p2 traceable (shot 8) | 4 end-frame options pushing in from crossfade start A to the meter case (sun hidden, same light) | nano_banana_pro 2K | 8 | 1308 |
 | 48 | p2 traceable (shot 8) | 480p test, crossfade start A to end C (push-in to the meter case, no sun) | seedance_2_5 480p 5 s | 15 | 1323 |
+| 49 | p2 traceable (shot 8) | HD final 1080p, 5 s, high bitrate, crossfade start A to end C (480p test passed) | seedance_2_5 | 80 | 1403 |
+| 50 | p3 harvest (shot 9) | 4 end-frame options from p2 last frame (no people: shrimp crates on ice, draining net, aerator spray by the truck; sun hidden) | nano_banana_pro 2K | 8 | 1411 |
+| 51 | p3 harvest (shot 9) | 480p test from start frame B only (crossfade from p2; slow push along the crate row, net draining) | seedance_2_5 480p 5 s | 15 | 1426 |

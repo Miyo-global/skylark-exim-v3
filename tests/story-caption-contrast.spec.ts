@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test'
 // background under that line's box. The 90th-percentile background luminance must give ≥ 4.5:1 for body copy and the
 // eyebrow, ≥ 3:1 for the large title. Text shadows are ignored, so this is the conservative case.
 // the CG chapters per path; add each chapter as it turns CG
-const PATHS = { ocean: ['o1', 'o2', 'o3', 'o4'], pond: ['p1'] }
+const PATHS = { ocean: ['o1', 'o2', 'o3', 'o4'], pond: ['p1', 'p2'] }
 const VIEWS = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } }
 
 for (const [name, viewport] of Object.entries(VIEWS)) for (const [path, CHAPTERS] of Object.entries(PATHS)) {
@@ -29,7 +29,9 @@ for (const [name, viewport] of Object.entries(VIEWS)) for (const [path, CHAPTERS
           return (['caption__eyebrow', 'caption__title', 'caption__body'] as const).flatMap((k) => {
             const e = cap.querySelector<HTMLElement>(`.${k}`)
             if (!e) return []
-            const r = e.getBoundingClientRect(), c = getComputedStyle(e).color
+            // the text's own extent, not the block's (a block eyebrow spans the column, mostly empty footage)
+            const range = document.createRange(); range.selectNodeContents(e)
+            const r = range.getBoundingClientRect(), c = getComputedStyle(e).color
             return [{ k, x: r.left, y: r.top, w: r.width, h: r.height, c }]
           })
         })
