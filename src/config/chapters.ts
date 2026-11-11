@@ -53,7 +53,7 @@ export const CROP_X: Record<string, number> = {
   'cg-depart-1': 0.55, 'cg-depart-2': 0.6, 'cg-depart-3': 0.55, 'cg-catch': 0.5,
   'hf-depart': 0.68, 'hf-catch': 0.55, 'hf-ice': 0.45, 'cg-ice': 0.5, 'hf-return': 0.55, 'cg-return': 0.5,
   'hf-ponds': 0.5, 'cg-ponds': 0.5, 'hf-sample': 0.42, 'cg-sample': 0.35, 'hf-harvest': 0.45, 'cg-harvest': 0.4, 'hf-sort': 0.5,
-  'hf-arrive': 0.42, 'hf-reverse': 0.62, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
+  'hf-arrive': 0.42, 'hf-reverse': 0.62, 'cg-arrive': 0.6, 'hf-unload-fish': 0.53, 'hf-unload-crew': 0.45, 'hf-unload-shrimp': 0.45, 'hf-intake': 0.3, 'hf-fish-intake': 0.45,
   'hf-wash': 0.45, 'hf-peel': 0.72, 'hf-fish-wash': 0.6, 'hf-fish-cut': 0.4,
   'hf-lab': 0.4, 'hf-iqf': 0.4, 'hf-pack': 0.45, 'hf-store': 0.6, 'hf-fish-freeze': 0.725,
   'hf-ship': 0.5, 'hf-sail': 0.57,
@@ -70,7 +70,7 @@ export const COPY_RIGHT = new Set(['p1', 'process', 'port'])
  * Phones keep the video (docs/review/cleanup/AUDIT.md holds the measurement).
  */
 export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'cg-harvest', 'hf-sort',
-  'hf-arrive', 'hf-reverse', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
+  'cg-arrive', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
   'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
   'hf-port-1', 'hf-port-2', 'hf-port-3', 'hf-port-4', 'hf-port-5', 'hf-ship', 'hf-sail']
 
@@ -130,8 +130,7 @@ const PLANT_POND: ChapterDef[] = [
   {
     id: 'intake', path: 'pond', label: 'Intake', vh: 260, joinNext: 'crossfade', scrim: 'soft',
     media: [
-      { kind: 'video', id: 'hf-arrive', alt: 'At dawn a white refrigerated truck drives in through the plant gate, its driver at the wheel and the cooling unit misting, and turns toward the loading docks.' },
-      { kind: 'video', id: 'hf-reverse', alt: 'The truck stands backed into the insulated dock bay, its rear lights on, as a worker in a hi-vis vest guides it with a raised palm and the driver sits at the wheel.' },
+      { kind: 'video', id: 'cg-arrive', alt: 'On a hazy morning a white refrigerated truck drives slowly across the wet concrete yard toward the loading bays of the seafood plant, coconut palms along the yard, the camera following low behind it.' },
       { kind: 'video', id: 'hf-unload-shrimp', alt: 'At the dock, two workers in white coats, hairnets and gloves lift a steel crate of seafood on ice out of the open truck, stacked with steel crates, onto a steel trolley.' },
       { kind: 'video', id: 'hf-intake', alt: 'Inside the receiving bay, a masked worker in a white coat carries a steel crate of shrimp on ice toward the steel trolleys beside the truck, while a second worker walks back to the dock door.' },
     ],
@@ -168,8 +167,7 @@ const PLANT_OCEAN: ChapterDef[] = [
   {
     id: 'intake', path: 'ocean', label: 'Intake', vh: 340, joinNext: 'crossfade', scrim: 'soft',
     media: [
-      { kind: 'video', id: 'hf-arrive', alt: 'At dawn a white refrigerated truck drives in through the plant gate, its driver at the wheel and the cooling unit misting, and turns toward the loading docks.' },
-      { kind: 'video', id: 'hf-reverse', alt: 'The truck stands backed into the insulated dock bay, its rear lights on, as a worker in a hi-vis vest guides it with a raised palm and the driver sits at the wheel.' },
+      { kind: 'video', id: 'cg-arrive', alt: 'On a hazy morning a white refrigerated truck drives slowly across the wet concrete yard toward the loading bays of the seafood plant, coconut palms along the yard, the camera following low behind it.' },
       { kind: 'video', id: 'hf-unload-fish', alt: 'A refrigerated truck stands backed into the dock seal with its rear doors open: three open steel crates of whole fish and tuna on crushed ice, with empty steel trolleys waiting on either side.' },
       { kind: 'video', id: 'hf-unload-crew', alt: 'Two workers in white coats, hairnets and gloves lift a steel crate of whole fish on ice out of the open truck together and set it on a steel trolley at the dock.' },
       { kind: 'video', id: 'hf-fish-intake', alt: 'At the receiving bay, steel trays of whole tuna, seer fish and Indian mackerel on ice; one worker opens a tuna\'s gill cover to check the gills while another inspects a second tuna.' },

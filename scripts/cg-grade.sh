@@ -17,6 +17,10 @@ mkdir -p "masters/$id"; tmp=$(mktemp -d "${TMPDIR:-/tmp}/cg.XXXXXX"); trap 'rm -
 # CG's level (peak whites ~85 %, mean ~120-130 vs 145-165 ungraded), saturation a touch lower and a warm shift, so a lit
 # interior sits beside the CG film. Measured on hf-wash: peak 99 % -> 85 %, shadows R42 G57 B81 -> R33 G29 B29.
 PRE="${PLANT:+eq=gamma=0.84:contrast=1.06:saturation=0.92,colorbalance=rs=0.04:bs=-0.05:rm=0.06:bm=-0.06:rh=0.03:bh=-0.04,colorlevels=romax=0.84:gomax=0.83:bomax=0.81,}"
+# MATCH=<ffmpeg filters,> (11 Nov): a per-clip match after PLANT's pre-grade, for a live clip that sits right after a CG
+# clip, so its first frame meets the CG's last frame in warmth, haze (lifted blacks) and exposure. Values per clip in
+# scripts/plant-match.env (measured against cg-arrive's eased last frame).
+PRE="${PRE}${MATCH:-}"
 GRADE="${PRE}deband=1thr=0.02:2thr=0.02:3thr=0.02:range=22:blur=1,colorbalance=rs=0.035:bs=-0.035:rm=0.05:gm=0.01:bm=-0.05:rh=0.03:bh=-0.04,eq=gamma=1.10:contrast=1.05,scale=2560:1440:flags=lanczos,unsharp=5:5:0.5,noise=alls=3:allf=p,format=yuv420p"
 if [ -n "$prev" ]; then
   ffmpeg -nostdin -v error -y -sseof -0.05 -i "$prev" -update 1 -frames:v 1 "$tmp/prev.png"

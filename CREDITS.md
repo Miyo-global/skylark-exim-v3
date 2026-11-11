@@ -77,3 +77,6 @@ to 1, and on the pond path wash+peel and lab+IQF), about 1,850 credits, about 63
 | 53 | plant arrival (CG shot 1 of 5) | 4 start-frame options: reefer truck arriving at the plant loading bay (no people, no sun) | nano_banana_pro 2K | 8 | 1514 |
 | 54 | plant arrival (CG shot 1 of 5) | 480p test from start frame C (plate and box mark painted out first): truck drives forward to the bays, camera follows on one line | seedance_2_5 480p 5 s | 15 | 1529 |
 | 55 | plant arrival (CG shot 1 of 5) | HD final 1080p, 5 s, high bitrate, from start frame C (480p test passed); blank rear plate painted out after, last frame kept as shot 2 start | seedance_2_5 | 80 | 1609 |
+| 56 | dock loading (CG shot 2 of 5) | 4 end-frame options from shot 1's clean last frame (2 no people, 2 with one worker; asked for the truck backed into a bay, doors open into the dock seal) | nano_banana_pro 2K | 8 | 1617 |
+| 57 | dock loading (CG shot 2 of 5) | 4 docked start-frame options for the crossfade from shot 1 (same camera, truck backed into a bay, doors open into the seal, no people) — the shot's one retake | nano_banana_pro 2K | 8 | 1625 |
+| 58 | port (CG shot 3 of 5) | 4 start-frame options: Indian RHD tractor with a plain 40 ft reefer on the quay, one crane, one ship, no people, no sun | nano_banana_pro 2K | 8 | 1633 |
