@@ -15,8 +15,8 @@ const VIEWPORTS = {
   '390x844@3': { viewport: { width: 390, height: 844 }, dpr: 3, mobile: true },
 } as const
 const MIN = 0.95
-/** per tier: every desktop tier 60 MB (#hd2; was 40 MB retina, 28 MB at 1920), the phone 12 MB */
-const PATH_MB = { retina: 60, desktop: 60, mobile: 12 }
+/** per tier: every desktop tier 90 MB (PR #324: the WebP q 55-70 KB frame sets; was 60 MB, #hd2), the phone 30 MB (CRF 22 AV1, streamed by chapter; was 12) */
+const PATH_MB = { retina: 90, desktop: 90, mobile: 30 }
 /** the masters are 1440 rows tall: the best a phone portrait clip or poster can reach at 844 css px × dpr 3 (0.57) */
 const MASTER_ROWS = 1440
 /** LCP: 2,300 ms is the target, 2,500 ms the hard limit (#264) */

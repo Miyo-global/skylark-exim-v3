@@ -66,3 +66,88 @@ for (const path of ['ocean', 'pond'] as const)
     expect(p95).toBeLessThanOrEqual(3)
     expect(freeze).toBeLessThanOrEqual(250)
   })
+
+// Phones (PR #324, 12 Nov): the video decoders on a 390×844 phone over throttled 4G (9 Mbps down, 150 ms RTT, cache off),
+// scrolled down the whole path and back up at 900 px/s. Lag: the frame the decoder on screen shows against the frame the
+// scroll asks for (currentTime vs __scrub.target, in frames); freeze: the longest time the picture stays put while the
+// scroll asks for another frame. Same limits as desktop: p95 ≤ 3 frames, freeze ≤ 250 ms.
+const FOUR_G = { offline: false, latency: 150, downloadThroughput: (9 * 1024 * 1024) / 8, uploadThroughput: (1.5 * 1024 * 1024) / 8 }
+
+for (const path of ['ocean', 'pond'] as const)
+  test(`phone video keeps up on 4G, down and up: ${path}`, async ({ browser, baseURL }) => {
+    test.setTimeout(600_000)
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })
+    const page = await ctx.newPage()
+    const cdp = await ctx.newCDPSession(page)
+    await cdp.send('Network.enable')
+    await cdp.send('Network.setCacheDisabled', { cacheDisabled: true })
+    await cdp.send('Network.emulateNetworkConditions', FOUR_G)
+    await page.goto(`${baseURL}/story#${path}`)
+    await page.waitForFunction(() => document.documentElement.dataset.ready === '1', null, { timeout: 90_000 })
+    await page.waitForTimeout(800)
+    await page.evaluate(() => {
+      type Row = { t: number; clip: string; want: number; got: number; dir: number }
+      const w = window as unknown as { __lag: Row[]; __scrub: { id: string | null; target: number; shown: boolean } }
+      w.__lag = []
+      let y = scrollY
+      const step = (t: number) => {
+        const s = w.__scrub
+        const v = [...document.querySelectorAll<HTMLVideoElement>('.stage video')].find((e) => e.style.opacity === '1')
+        if (s.id && s.shown && v && v.dataset.clip === s.id)
+          w.__lag.push({ t, clip: s.id, want: Math.round(s.target * 24), got: Math.round(v.currentTime * 24), dir: Math.sign(scrollY - y) })
+        y = scrollY
+        requestAnimationFrame(step)
+      }
+      requestAnimationFrame(step)
+    })
+    const run = (v: number) =>
+      page.evaluate(
+        (v) =>
+          new Promise<void>((done) => {
+            const end = document.getElementById('story')!
+            const max = v > 0 ? end.offsetTop + end.offsetHeight - innerHeight : 0
+            let last = performance.now()
+            const step = (t: number) => {
+              window.scrollBy(0, ((t - last) / 1000) * v)
+              last = t
+              if (v > 0 ? scrollY >= max - 2 : scrollY <= 1) done()
+              else requestAnimationFrame(step)
+            }
+            requestAnimationFrame(step)
+          }),
+        v,
+      )
+    await run(900)
+    await page.waitForTimeout(800)
+    await run(-900)
+    await page.waitForTimeout(800)
+    const rows = await page.evaluate(() => (window as unknown as { __lag: { t: number; clip: string; want: number; got: number; dir: number }[] }).__lag)
+    await ctx.close()
+
+    const report = (dir: number) => {
+      const r = rows.filter((x) => x.dir === dir)
+      const lags: number[] = []
+      let freeze = 0
+      let since = r[0]?.t ?? 0
+      let clipStart = since
+      for (let k = 1; k < r.length; k++) {
+        if (r[k].clip !== r[k - 1].clip || r[k].t - r[k - 1].t > 100) {
+          clipStart = since = r[k].t
+          continue
+        }
+        if (r[k].t - clipStart > 300) lags.push(Math.abs(r[k].want - r[k].got))
+        if (r[k].got !== r[k - 1].got || r[k].want === r[k].got) since = r[k].t
+        else freeze = Math.max(freeze, r[k].t - since)
+      }
+      lags.sort((a, b) => a - b)
+      return { n: lags.length, p95: lags[Math.floor(lags.length * 0.95)] ?? 0, max: lags.at(-1) ?? 0, freeze: Math.round(freeze) }
+    }
+    const down = report(1)
+    const up = report(-1)
+    console.log(`${path} phone 4G: down ${JSON.stringify(down)}, up ${JSON.stringify(up)}`)
+    for (const d of [down, up]) {
+      expect(d.n).toBeGreaterThan(100)
+      expect(d.p95).toBeLessThanOrEqual(3)
+      expect(d.freeze).toBeLessThanOrEqual(250)
+    }
+  })

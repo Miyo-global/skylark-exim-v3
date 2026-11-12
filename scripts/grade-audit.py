@@ -3,6 +3,8 @@ of every join (last frame of clip N against the first frame of N+1: luma change 
 sets and the phone MP4s, plus a contact sheet of each path's joins. Story order comes from src/film/manifest.ts.
   python3 scripts/grade-audit.py [--out review/grade] [--src shipped|masters]
 Limits (flagged with !): a join over 6 % luma or 0.05 R/B (the audit's), and the target after the regrade: 3 % / 0.02.
+Tiers (what a visitor downloads): desk = the CG 1920 AVIF frame sets and the plant clips' 1920 AV1 video, phone =
+<id>_m.av1.mp4.
 --src masters reads masters/<id>/master.mp4 instead (the frames the encodes are made from). 0 credits.
 """
 import argparse, json, os, re, subprocess, tempfile
@@ -57,7 +59,7 @@ def ends(cid, tier):
         n = int(seq[cid])
         fr = lambda i: f'{M}/{cid}-f_1920_{i:03d}.avif'
         return grab(fr(0), 0, f'{cid}-da'), grab(fr(n // 2), 0, f'{cid}-dm'), grab(fr(n - 1), 0, f'{cid}-dz')
-    f = f'{M}/{cid}_m.mp4' if tier == 'phone' else f'{M}/{cid}_1920.mp4'
+    f = f'{M}/{cid}_m.av1.mp4' if tier == 'phone' else f'{M}/{cid}_1920.av1.mp4'
     n = int(subprocess.run(['ffprobe', '-v', 'error', '-count_frames', '-select_streams', 'v', '-show_entries',
                             'stream=nb_read_frames', '-of', 'csv=p=0', f], capture_output=True, text=True).stdout)
     return grab(f, 'first', f'{cid}-{tier}a'), grab(f, n // 2, f'{cid}-{tier}m'), grab(f, 'last', f'{cid}-{tier}z')

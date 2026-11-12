@@ -7,11 +7,11 @@ import { PROFILES, scrollThrough, type ProfileName } from './helpers'
 // of the story, #preload), and on /story every /media file its intro preloads (posters, stills, photos), are counted in
 // the full budget only.
 // /story per path, counted once the warm cache is through and the scroll has reached the end. Per tier, because a
-// device downloads one tier: every desktop tier 60 MB (#hd2: 2560 clips from the HD masters, streamed by chapter on
-// desktop, was 40 MB retina and 28 MB at 1920), a phone 12 MB. The homepage carries the hero's frame set, so it has
+// device downloads one tier: every desktop tier 90 MB (PR #324: sharp WebP frame sets; was 60 MB) (#hd2: 2560 clips from the HD masters, streamed by chapter on
+// desktop, was 40 MB retina and 28 MB at 1920), a phone 30 MB (PR #324: CRF 22 AV1, streamed by chapter). The homepage carries the hero's frame set, so it has
 // its own 8 MB full-scroll budget.
-const BUDGET = { desktop: { initial: 2.5e6, full: 60e6 }, mobile: { initial: 1.5e6, full: 12e6 } }
-const RETINA_FULL = 60e6
+const BUDGET = { desktop: { initial: 2.5e6, full: 90e6 }, mobile: { initial: 3e6, full: 30e6 } }
+const RETINA_FULL = 90e6
 const HOME_FULL = 8e6
 const MB = (b: number) => +(b / 1e6).toFixed(2)
 /** the story's clips and frame sequences */
@@ -114,7 +114,7 @@ for (const profile of Object.keys(PROFILES) as ProfileName[]) {
   }
 }
 
-// the 2560 tier (#264): a retina desktop downloads the largest files the site serves, inside its own budget (60 MB, #hd2)
+// the 2560 tier (#264): a retina desktop downloads the largest files the site serves, inside its own budget (90 MB, PR #324)
 for (const path of ['ocean', 'pond']) {
   test(`weight retina 2560 ${path}`, async ({ browser }) => {
     test.setTimeout(600_000)

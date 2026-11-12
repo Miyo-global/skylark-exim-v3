@@ -4,6 +4,7 @@ the brightening inside a clip flattened. 0 credits: it regrades the existing mas
   python3 scripts/grade-match.py            solve, print the predicted tables, write scripts/plant-match.env
   python3 scripts/grade-match.py --render   then render masters/<id>/master.mp4 (the original kept as master.pregrade.mp4)
   python3 scripts/grade-match.py --render cg-catch cg-return   only these clips (the solve still sees every clip)
+  python3 scripts/grade-match.py --phone --render   the phone pass: joins on the 810x1440 crops -> masters/<id>/phone.mp4
 
 Reference: cg-port master frame 36 (Y 146.5, p1 16, p99 225, R/B 1.32, S 28.5 %).
 1. Per clip, a static grade, solved on all its frames (320 px): gamma, output black and white points, a red/blue balance
@@ -34,13 +35,33 @@ order = {p: re.findall(r"\{ id: '([^']+)'", re.search(rf'\n  {p}: \[(.*?)\n  \]'
 ids = list(dict.fromkeys(order['ocean'] + order['pond']))
 
 
+# --phone (12 Nov): the phone pass. A phone shows an 810x1440 crop of each master around CROP_X (chapters.ts), so its joins
+# meet other regions than the full frames above: on the crops of the graded masters (no static change), the same flatten
+# and join ramps are solved and rendered to masters/<id>/phone.mp4, which scripts/phone-crf.py encodes.
+PHONE = '--phone' in sys.argv
+if PHONE:
+    W, H = 162, 288
+    _cx = json.loads(subprocess.run(['node', '--import', 'tsx', '--input-type=module', '-e',
+                                     "const { CROP_X } = await import('./src/config/chapters.ts'); console.log(JSON.stringify(CROP_X))"],
+                                    capture_output=True, text=True, check=True).stdout)
+
+
+def crop(cid):
+    x = min(1750, max(0, int(_cx.get(cid, 0.5) * 2560 - 405)))
+    return f'crop=810:1440:{x - x % 2}:0'
+
+
 def src(cid):
+    if PHONE:
+        return f'masters/{cid}/master.mp4'
     f = f'masters/{cid}/master.pregrade.mp4'
     return f if os.path.exists(f) else f'masters/{cid}/master.mp4'
 
 
-def frames(cid, w=W, h=H):
-    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', src(cid), '-vf', f'scale={w}:{h}:flags=area', '-f', 'rawvideo',
+def frames(cid, w=None, h=None):
+    w, h = w or W, h or H
+    vf = (crop(cid) + ',' if PHONE else '') + f'scale={w}:{h}:flags=area'
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', src(cid), '-vf', vf, '-f', 'rawvideo',
                           '-pix_fmt', 'rgb24', '-'], capture_output=True, check=True).stdout
     return np.frombuffer(raw, np.uint8).reshape(-1, h, w, 3)
 
@@ -153,13 +174,14 @@ def ease(k):
 # ---------------------------------------------------------------------------------------------------------------------
 render = '--render' in sys.argv
 only = [a for a in sys.argv[1:] if not a.startswith('--')]
-cache = f'{os.environ.get("TMPDIR", "/tmp")}/grade-match-solve.json'
+cache = f'{os.environ.get("TMPDIR", "/tmp")}/grade-match-{"phone" if PHONE else "solve"}.json'
 saved = json.load(open(cache)) if os.path.exists(cache) and '--resolve' not in sys.argv else {}
 
 fr, P = {}, {}
 for cid in ids:
     fr[cid] = frames(cid)
-    P[cid] = saved.get(cid) or solve(cid, fr[cid])
+    # the phone pass keeps the masters' grade: identity static, only the per-frame curves
+    P[cid] = [0.0, 255.0, 1.0, 1.0, 1.0] if PHONE else saved.get(cid) or solve(cid, fr[cid])
     print(f'{cid:18} solved black {P[cid][0]:+6.1f} white {P[cid][1]:5.1f} gamma {P[cid][2]:.3f} R/B gain {P[cid][3]:.3f} sat {P[cid][4]:.3f}', flush=True)
 json.dump(P, open(cache, 'w'))
 
@@ -256,7 +278,7 @@ def predict(cid):
 
 # the per-frame curves move a clip's mean a little (the ramps pull its ends toward its neighbours): refine each static
 # grade against what the clip shows with them, then solve the curves again
-for rnd in range(8):
+for rnd in range(0 if PHONE else 8):
     chain()
     moved = 0
     for cid in ids:
@@ -301,18 +323,19 @@ for path, seq in order.items():
         print(f"{'!' if abs(dy) > 3 or abs(drb) > 0.02 else ' '} {x + '→' + y:36} {dy:6.1f} {drb:7.3f}")
 
 # --- plant-match.env: the static grade per clip, as ffmpeg filters (same math as apply()) ---
-env = open('scripts/plant-match.env').read().split('\n# grade-match.py')[0].rstrip('\n')
-lines = ['', '# grade-match.py (12 Nov, PR #324 audit): the static grade per clip, applied to masters/<id>/master.mp4 after',
-         '# cg-grade.sh, as rendered by scripts/grade-match.py --render (which adds the per-frame flatten and join ramps).',
-         '# lutrgb: gamma, output black/white points, red/blue gain; colorchannelmixer: saturation around Rec.709 luma.']
-for cid in ids:
-    black, ow, gam, rb, sat = P[cid]
-    lo, ob = levels(black)
-    ch = lambda k: f"clip(({ob:.3f}+{ow - ob:.3f}*pow(clip((val-{lo:.3f})/{255 - lo:.3f}\\,0\\,1)\\,{gam:.4f}))*{k:.4f}\\,0\\,255)"
-    m = satm(sat)
-    mix = ':'.join(f'{a}{b}={m[i, j]:.4f}' for i, a in enumerate('rgb') for j, b in enumerate('rgb'))
-    lines.append(f"post_{cid.replace('-', '_')}='lutrgb=r={ch(np.sqrt(rb))}:g={ch(1.0)}:b={ch(1 / np.sqrt(rb))},colorchannelmixer={mix},'")
-open('scripts/plant-match.env', 'w').write(env + '\n' + '\n'.join(lines) + '\n')
+if not PHONE:
+    env = open('scripts/plant-match.env').read().split('\n# grade-match.py')[0].rstrip('\n')
+    lines = ['', '# grade-match.py (12 Nov, PR #324 audit): the static grade per clip, applied to masters/<id>/master.mp4 after',
+             '# cg-grade.sh, as rendered by scripts/grade-match.py --render (which adds the per-frame flatten and join ramps).',
+             '# lutrgb: gamma, output black/white points, red/blue gain; colorchannelmixer: saturation around Rec.709 luma.']
+    for cid in ids:
+        black, ow, gam, rb, sat = P[cid]
+        lo, ob = levels(black)
+        ch = lambda k: f"clip(({ob:.3f}+{ow - ob:.3f}*pow(clip((val-{lo:.3f})/{255 - lo:.3f}\\,0\\,1)\\,{gam:.4f}))*{k:.4f}\\,0\\,255)"
+        m = satm(sat)
+        mix = ':'.join(f'{a}{b}={m[i, j]:.4f}' for i, a in enumerate('rgb') for j, b in enumerate('rgb'))
+        lines.append(f"post_{cid.replace('-', '_')}='lutrgb=r={ch(np.sqrt(rb))}:g={ch(1.0)}:b={ch(1 / np.sqrt(rb))},colorchannelmixer={mix},'")
+    open('scripts/plant-match.env', 'w').write(env + '\n' + '\n'.join(lines) + '\n')
 json.dump(dict(static=P, per_frame=PF, predicted=pred), open(f'{os.environ.get("TMPDIR", "/tmp")}/grade-match.json', 'w'))
 
 if not render:
@@ -320,15 +343,18 @@ if not render:
 
 # --- render: full-size master, per-frame curve + matrix, x264 crf 12 (what encode-hf.sh and clip-frames.sh read) ---
 for cid in only or ids:
-    pre = f'masters/{cid}/master.pregrade.mp4'
-    if not os.path.exists(pre):
-        os.rename(f'masters/{cid}/master.mp4', pre)
-    w, h = 2560, 1440
-    dec = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', pre, '-vf', f'scale={w}:{h}', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
+    if PHONE:  # the graded master's phone crop -> masters/<id>/phone.mp4
+        pre, vf, w, h, out = f'masters/{cid}/master.mp4', crop(cid), 810, 1440, f'masters/{cid}/phone.mp4'
+    else:
+        pre = f'masters/{cid}/master.pregrade.mp4'
+        if not os.path.exists(pre):
+            os.rename(f'masters/{cid}/master.mp4', pre)
+        vf, w, h, out = 'scale=2560:1440', 2560, 1440, f'masters/{cid}/master.mp4'
+    dec = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', pre, '-vf', vf, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],
                            stdout=subprocess.PIPE)
     enc = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{w}x{h}', '-r', '24',
                             '-i', '-', '-c:v', 'libx264', '-preset', 'slow', '-crf', '12', '-pix_fmt', 'yuv420p', '-an',
-                            f'masters/{cid}/master.mp4'], stdin=subprocess.PIPE)
+                            out], stdin=subprocess.PIPE)
     m = satm(P[cid][4]).T
     for i, (g, t) in enumerate(PF[cid]):
         buf = dec.stdout.read(w * h * 3)

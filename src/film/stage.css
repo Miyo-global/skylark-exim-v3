@@ -40,13 +40,14 @@
    tests/story-caption-contrast checks the copy over it. Phones: a bottom shade under the full-width caption. */
 .stage.is-cg .stage__scrim {
   --corner: 0% 82%;
-  /* tall enough to reach the eyebrow line over bright water (p2: 2.2:1 at 64%) */
-  background: radial-gradient(48% 76% at var(--corner), rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.62) 55%, rgba(0, 0, 0, 0) 100%);
+  /* tall enough to reach the eyebrow line over bright water (p2: 2.2:1 at 64%). PR #324: the one-grade regrade lifted the
+     CG to the port's exposure (mean luma 146), so the shade is larger and darker (p1 eyebrow 3.68:1 at 0.72/0.62) */
+  background: radial-gradient(56% 92% at var(--corner), rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.74) 58%, rgba(0, 0, 0, 0) 100%);
 }
 .stage.is-cg.is-right .stage__scrim { --corner: 100% 82%; }
 @media (max-width: 819px) {
   .stage.is-cg .stage__scrim, .stage.is-cg.is-right .stage__scrim {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0) 65%);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.72) 44%, rgba(0, 0, 0, 0) 70%);
   }
 }
 /* the world chapter's scroll spacer lets pointers through to the globe under it (its copy re-enables its own) */

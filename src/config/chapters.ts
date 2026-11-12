@@ -65,14 +65,13 @@ export const COPY_RIGHT = new Set(['p1', 'process', 'port'])
 
 /**
  * Clips a desktop plays as a frame sequence on the stage canvas instead of a <video> (src/film/sequence.ts, the Terminal
- * Industries pattern): every story clip, so a scroll never waits for a video seek and a fast move never macroblocks.
- * Each set is evenly spaced master frames as AVIF stills, sized to its share of the 60 MB path (scripts/clip-frames.sh).
- * Phones keep the video (docs/review/cleanup/AUDIT.md holds the measurement).
+ * Industries pattern): the CG shots, so a scroll never waits for a video seek and a fast camera move never macroblocks.
+ * Each set is evenly spaced master frames as 1920 WebP stills, q 55-70 KB a frame (scripts/clip-frames.sh). The live
+ * plant clips play as 1920/2560 video from the regraded masters (PR #324, 12 Nov: their fine texture is 250-320 KB a WebP
+ * frame at 1920; static cameras compress ~10x better as video). Phones keep the video.
  */
-export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'cg-harvest', 'hf-sort',
-  'cg-arrive', 'hf-unload-fish', 'hf-unload-crew', 'hf-unload-shrimp', 'hf-fish-intake', 'hf-intake',
-  'hf-fish-wash', 'hf-fish-cut', 'hf-wash', 'hf-peel', 'hf-lab', 'hf-iqf', 'hf-pack', 'hf-fish-freeze', 'hf-store',
-  'cg-port', 'cg-ship', 'cg-sail']
+export const SEQ_CLIPS = ['cg-depart-1', 'cg-depart-2', 'cg-depart-3', 'cg-catch', 'cg-ice', 'cg-return', 'cg-ponds', 'cg-sample', 'cg-harvest',
+  'cg-arrive', 'cg-port', 'cg-ship', 'cg-sail']
 
 const caps = (id: string, ranges: [number, number][]): Caption[] => film[id].map((c, i) => ({ ...c, at: ranges[i] }))
 

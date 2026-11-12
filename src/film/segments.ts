@@ -51,7 +51,8 @@ const TYPES: Record<Codec, string> = {
   hevc: 'video/mp4; codecs="hvc1.1.6.L120.90"',
   h264: 'video/mp4; codecs="avc1.640028"',
 }
-const ORDER: Codec[] = ['av1', 'hevc', 'h264']
+/** phones: AV1, else H.264 (PR #324: the phone tier has no HEVC files); desktop: AV1, HEVC, H.264 */
+const ORDER: Codec[] = env.mobile ? ['av1', 'h264'] : ['av1', 'hevc', 'h264']
 const probe = typeof document !== 'undefined' ? document.createElement('video') : null
 /**
  * One codec per visitor: AV1, else HEVC (Safari), else H.264. A first pick from canPlayType, so the first clip can load at
@@ -122,12 +123,16 @@ const stillUrl = (id: string, w: Tier) => (id.startsWith('ph-') ? img(`${id}_${s
 
 /**
  * Desktop frame sequences (#hd2, chapters.ts SEQ_CLIPS): the stage canvas plays these clips frame by frame instead of a
- * <video>. Phones, Save-Data and 3G keep the video. One 1920 set on every desktop tier (scripts/clip-frames.sh): AVIF,
- * or WebP for a browser without AVIF.
+ * <video>. Phones, Save-Data and 3G keep the video. One 1920 AVIF set on every desktop tier (scripts/clip-frames.sh).
  */
 export const isSeq = (id: string) => !env.mobile && W !== 960 && W !== 'm' && id in SEQ
 export const seqFrames = (id: string) => SEQ[id]?.frames ?? 0
-export const seqUrl = (id: string, i: number) => `/media/${id}-f_1920_${String(i).padStart(3, '0')}.${avif ? 'avif' : 'webp'}?v=${SEQ[id]?.v}`
+/**
+ * One 1920 AVIF set per CG clip (PR #324, 12 Nov): from the master, lanczos and a light unsharp, each set encoded at the
+ * highest crf whose SSIM still matches the sharp WebP q 55-70 KB sets (scripts/clip-frames.sh SSIM_MATCH), ~45-63 KB a
+ * frame. AVIF only: every desktop browser that runs the canvas decodes it (Chrome 85, Firefox 93, Safari 16)
+ */
+export const seqUrl = (id: string, i: number) => `/media/${id}-f_1920_${String(i).padStart(3, '0')}.avif?v=${SEQ[id]?.v}`
 
 /**
  * First-frame poster for a segment, or null for gradient/globe and for a desktop frame-set clip (the canvas draws its

@@ -34,9 +34,11 @@ const NEAR = 2
 const AHEAD = 24
 /** a decoded neighbour further off than this is never drawn in the frame's place: the last good frame holds (#324) */
 const MAX_OFF = 3
-/** device pixel ratio the canvas is sized at, capped: a 3× phone would cost 9× the pixels for no visible gain */
-export const DPR_CAP = 2
-export const dpr = () => Math.min(devicePixelRatio || 1, DPR_CAP)
+/** the canvas is sized at the device pixel ratio (PR #324: never a CSS-px canvas stretched by the compositor) */
+export const dpr = () => devicePixelRatio || 1
+/** the frame sets' native size (scripts/clip-frames.sh: 1920x1080) */
+const NATIVE_W = 1920
+const NATIVE_H = 1080
 
 export interface SequenceSpec {
   /** unique per frame set: the worker keeps one byte store per id */
@@ -351,7 +353,12 @@ export function createStage(canvas: HTMLCanvasElement) {
   let settle = 0
 
   const resize = () => {
-    const next = [Math.round(canvas.clientWidth * dpr()), Math.round(canvas.clientHeight * dpr())]
+    // device px, but never more than a frame covers at its native size: past that the canvas would scale the frame up
+    // (a resample that only softens it); the browser stretches a capped canvas once, on the GPU, when it composites
+    const cw = canvas.clientWidth * dpr()
+    const ch = canvas.clientHeight * dpr()
+    const k = Math.min(1, 1 / Math.max(cw / NATIVE_W, ch / NATIVE_H))
+    const next = [Math.round(cw * k), Math.round(ch * k)]
     if (next[0] === w && next[1] === h) return
     ;[w, h] = next
     canvas.width = w

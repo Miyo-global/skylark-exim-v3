@@ -5,6 +5,9 @@ Per id: public/media/<id>_m.av1.mp4, .hevc.mp4 and .mp4 re-encoded from <id>_m.m
 as a VBR at the bitrate that lands each under CAP bytes, with encode-hf.sh's stream settings (closed 6-frame GOP, no
 B-frames, no scene cuts, faststart), stepping down 12 % until it fits; <id>_m.avif / .webp posters re-encoded under
 POSTER_KB. The phone tier only: desktop tiers and frame sets are untouched. 0 credits.
+FROM_MASTER=1 (PR #324 item 3d): the source is masters/<id>/master.mp4 (the regraded master) cropped to 810x1440 around
+CROP_X like encode-hf.sh, every codec re-encoded under its own current file size (the phone path keeps its bytes), and the
+posters redrawn from its first frame.
 ponytail: re-encodes an already-encoded file (one more generation at 810x1440); from the master if a clip is re-cut.
 """
 import os, subprocess, sys, tempfile
@@ -57,16 +60,37 @@ def poster(id_, tmp):
         os.replace(f'{tmp}/p.webp', w)
     return f'avif {os.path.getsize(a) // 1024} webp {os.path.getsize(w) // 1024}'
 
+MASTER = bool(os.environ.get('FROM_MASTER'))
+
+
+def crop_x(id_):
+    cx = subprocess.run(['node', '--import', 'tsx', '--input-type=module', '-e',
+                         f"const {{ CROP_X }} = await import('./src/config/chapters.ts'); console.log(CROP_X['{id_}'] ?? 0.5)"],
+                        capture_output=True, text=True, check=True).stdout.strip()
+    x = min(1750, max(0, int(float(cx) * 2560 - 405)))
+    return x - x % 2
+
+
 for id_ in sys.argv[1:]:
     src = f'{M}/{id_}_m.mp4'
     with tempfile.TemporaryDirectory(dir=os.environ.get('TMPDIR')) as tmp:
         s = f'{tmp}/src.mp4'
-        run(['cp', src, s])
+        if MASTER:
+            run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', f'masters/{id_}/master.mp4', '-vf', f'crop=810:1440:{crop_x(id_)}:0',
+                 '-c:v', 'libx264', '-preset', 'slow', '-crf', '12', '-pix_fmt', 'yuv420p', '-an', s])
+            run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', s, '-frames:v', '1', f'{tmp}/f0.png'])
+            Image.open(f'{tmp}/f0.png').convert('RGB').save(f'{M}/{id_}_m.webp', 'WEBP', quality=80, method=6)
+            run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', f'{tmp}/f0.png', '-vf', 'format=yuv420p', '-c:v', 'libsvtav1',
+                 '-preset', '8', '-crf', '30', '-frames:v', '1', f'{M}/{id_}_m.avif'])
+        else:
+            run(['cp', src, s])
         d = dur(s)
         log = []
         for codec, ext in (('av1', 'av1.mp4'), ('hevc', 'hevc.mp4'), ('h264', 'mp4')):
             out = f'{M}/{id_}_m.{ext}'
-            if os.path.getsize(out) <= CAP:
+            if MASTER:
+                CAP = os.path.getsize(out)
+            elif os.path.getsize(out) <= CAP:
                 log.append(f'{codec} {os.path.getsize(out) // 1024} (kept)')
                 continue
             kbps = int(CAP * 8 / d / 1000 * 0.92)

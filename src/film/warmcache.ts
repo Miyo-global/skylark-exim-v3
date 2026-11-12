@@ -66,9 +66,7 @@ if (navigator.webdriver || new URLSearchParams(location.search).has('debug'))
 export const cachedUrl = (id: string) => urls.get(id) ?? null
 
 /** bytes of a clip in the codec and tier this page plays (a frame set: its frames, AVIF or WebP) */
-const size = (c: Clip) => (isSeq(c.id) ? SEQ[c.id][avif ? 'avif' : 'webp'] : (c.files[codec][served(W, codec)]?.bytes ?? 0))
-let avif = false
-void avifReady.then((a) => (avif = a))
+const size = (c: Clip) => (isSeq(c.id) ? SEQ[c.id].bytes : (c.files[codec][served(W, codec)]?.bytes ?? 0))
 
 /** 0..1 of the active path's bytes in memory: its clips' Blobs and its frame sets' bytes */
 export function progress() {
@@ -171,7 +169,9 @@ async function run(p: Path) {
   // reach its second clip on a cold cache before a frame of it is in hand
   const chapter1 = CLIPS[p].filter((c) => opener && c.chapter === opener.chapter)
   if (opener && isSeq(opener.id)) {
-    const sets = chapter1.filter((c) => isSeq(c.id))
+    // the opening set whole; the rest of chapter 1 reaches its coarse level in the loop below (PR #324: the first screen
+    // under 8 MB at the sharp AVIF sets; o1 is three of them) and fills in from the first scroll
+    const sets = [opener]
     sets.forEach((c) => prefetchSeq(c.id))
     const second = CLIPS[p].find((c) => c.chapter === opener.chapter + 1 && isSeq(c.id))
     if (second) prefetchSeq(second.id)
@@ -193,8 +193,9 @@ async function run(p: Path) {
     opening = true
     emit()
   } else {
-    // every video of the first chapter, in order, as one count (three tries each, then the intro opens anyway)
-    const vids = chapter1.filter((c) => !isSeq(c.id))
+    // the first clip only (PR #324: a phone's first screen under 3 MB): the rest of chapter 1 streams right behind it,
+    // first in the window below, while the visitor watches clip 1 (three tries, then the intro opens anyway)
+    const vids = chapter1.filter((c) => !isSeq(c.id)).slice(0, 1)
     const grand = vids.reduce((a, c) => a + size(c), 0)
     let base = 0
     for (const c of vids.length ? vids : [first]) {
@@ -264,7 +265,13 @@ async function run(p: Path) {
     const first = !hasScrolled()
     const inWin = (c: Clip) => (first ? ahead(c) === 0 || ahead(c) === 1 : ahead(c) >= -1 && ahead(c) <= reach)
     // before the first scroll the next chapter is a first batch only: its sets to the coarse level, its first clip
-    const enough = (c: Clip) => (first && ahead(c) === 1 ? (isSeq(c.id) ? seqProgress(c.id) >= COARSE : urls.has(c.id) || c.id !== list.find((d) => d.chapter === c.chapter && !isSeq(d.id))?.id) : done(c))
+    // and the opening chapter's other frame sets to their coarse level only
+    const enough = (c: Clip) =>
+      first && (ahead(c) === 1 || (isSeq(c.id) && c.id !== list[0]?.id))
+        ? isSeq(c.id)
+          ? seqProgress(c.id) >= COARSE
+          : urls.has(c.id) || c.id !== list.find((d) => d.chapter === c.chapter && !isSeq(d.id))?.id
+        : done(c)
     const win = list.filter(inWin)
     const sets = win.filter((c) => isSeq(c.id) && !enough(c))
     const thin = sets.filter((c) => seqProgress(c.id) < COARSE)
