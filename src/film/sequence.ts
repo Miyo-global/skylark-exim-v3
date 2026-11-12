@@ -18,15 +18,27 @@ import type { FromWorker, ToWorker } from './decode.worker'
 
 /** decoded bitmaps held at once per sequence: 24 × 1920×1080 RGBA ≈ 190 MB of bitmaps on desktop, 10 on a phone */
 const LRU = env.mobile ? 10 : 24
-/** frames in flight at once (Terminal's concurrency: 6 desktop, 3 phone) */
+/** frame fetches in flight at once across every set (Terminal's concurrency: 6 desktop, 3 phone) */
 export const PARALLEL = env.mobile ? 3 : 6
+/** of those, the share a set that is not on screen may take: the set on screen always has RESERVE slots free */
+const RESERVE = 2
+/** decodes in flight at once per set, apart from the fetches: a decode never waits behind the network */
+const DECODES = env.mobile ? 2 : 4
+/** fetches in flight, all sets */
+let net = 0
 /** Save-Data, 2G and 3G: every second frame only, half the bytes for half the frame density */
 const DENSITY = env.saveData || env.slow ? 2 : 1
 /** frames either side of the one on screen that count as "something is loaded here" */
 const NEAR = 2
-/** device pixel ratio the canvas is sized at, capped: a 3× phone would cost 9× the pixels for no visible gain */
-export const DPR_CAP = 2
-export const dpr = () => Math.min(devicePixelRatio || 1, DPR_CAP)
+/** decoded ahead of the frame on screen, in the scroll's direction (up the page too); the rest of the LRU lies behind */
+const AHEAD = 24
+/** a decoded neighbour further off than this is never drawn in the frame's place: the last good frame holds (#324) */
+const MAX_OFF = 3
+/** the canvas is sized at the device pixel ratio (PR #324: never a CSS-px canvas stretched by the compositor) */
+export const dpr = () => devicePixelRatio || 1
+/** the frame sets' native size (scripts/clip-frames.sh: 1920x1080) */
+const NATIVE_W = 1920
+const NATIVE_H = 1080
 
 export interface SequenceSpec {
   /** unique per frame set: the worker keeps one byte store per id */
@@ -89,6 +101,10 @@ export class Sequence {
   /** keep fetching on every frame that arrives, not only when drawn (prefetch) */
   private auto = false
   private at = 0
+  /** the way the scroll last moved through this set: 1 down, -1 up */
+  private dir = 1
+  /** fetch the frames nearest the scroll first, not coarse first (the set on screen and the next, after the first screen) */
+  fine = false
 
   /** how many frames this device loads at all (the density thins the set on a slow link) */
   private readonly wanted: number
@@ -118,6 +134,13 @@ export class Sequence {
   /** frame index for a position inside the sequence (0..1) */
   index(at: number) {
     return Math.min(this.spec.frames - 1, Math.max(0, Math.round(at * (this.spec.frames - 1))))
+  }
+
+  /** frame `i` if it is decoded, else null (the crossfade's second frame: never a neighbour standing in for it) */
+  exact(i: number) {
+    const b = this.bitmaps.get(i)
+    if (b) this.touch(i, b)
+    return b ?? null
   }
 
   /**
@@ -159,40 +182,75 @@ export class Sequence {
   pump(i: number, decode = true) {
     if (this.stopped) return
     // the way the scroll is going: decoded first on that side
-    const dir = i < this.at ? -1 : 1
+    if (i !== this.at) this.dir = i < this.at ? -1 : 1
+    const dir = this.dir
     this.at = i
-    const free = () => PARALLEL - this.fetching.size - this.decoding.size
-    // decode first: a cached frame near the scroll position is one message away from being drawable
-    // (a prefetch only fetches: no bitmaps for a set that is not on screen)
-    if (decode)
-    for (let d = 0; d < this.lru / 2 && free() > 0; d++)
-      for (const j of d === 0 ? [i] : [i + dir * d, i - dir * d])
-        if (j >= 0 && j < this.spec.frames && this.cached.has(j) && !this.bitmaps.has(j) && !this.decoding.has(j) && free() > 0) {
-          this.decoding.add(j)
-          send({ k: 'decode', seq: this.spec.id, i: j, url: this.spec.url(j) })
-        }
-    while (free() > 0 && this.queue.length) {
+    // decode first: a cached frame near the scroll position is one message away from being drawable. AHEAD frames of
+    // the decoded window lie ahead of the scroll, the rest behind it (a prefetch only fetches: no bitmaps off screen)
+    if (decode) {
+      const ahead = Math.min(AHEAD, Math.ceil((this.lru * 2) / 3))
+      const behind = this.lru - 1 - ahead
+      for (let d = 0; d <= ahead && this.decoding.size < DECODES; d++)
+        for (const j of d === 0 ? [i] : d <= behind ? [i + dir * d, i - dir * d] : [i + dir * d])
+          if (j >= 0 && j < this.spec.frames && this.cached.has(j) && !this.bitmaps.has(j) && !this.decoding.has(j) && this.decoding.size < DECODES) {
+            this.decoding.add(j)
+            send({ k: 'decode', seq: this.spec.id, i: j, url: this.spec.url(j), hi: true })
+          }
+    }
+    // fetches share one cap across every set; a set off screen leaves RESERVE slots for the one on screen
+    const cap = decode ? PARALLEL : PARALLEL - RESERVE
+    while (net < cap && this.queue.length) {
       // coarse first, straight off the queue, unless nothing near the frame on screen is cached yet: then the queued
       // frame nearest it goes first, so a jump into the middle of a set shows something there rather than filling gaps
-      // at the start
+      // at the start. Once its coarse level is in, the set on screen takes the queued frame nearest the scroll (ahead
+      // of it first): the frames under the scroll never wait behind gaps far off.
       let at = 0
-      // at the very start nothing is cached anywhere: the coarse order itself is what brings a frame into view fast
-      if (this.cached.size > 0 && !this.hasNear(i))
-        for (let k = 1; k < this.queue.length; k++) if (Math.abs(this.queue[k] - i) < Math.abs(this.queue[at] - i)) at = k
+      const coarse = this.cached.size >= Math.ceil(this.wanted / 8)
+      if (this.cached.size > 0 && (!this.hasNear(i) || this.fine || (decode && coarse))) {
+        const cost = (j: number) => ((j - i) * dir >= 0 ? Math.abs(j - i) : Math.abs(j - i) * 2)
+        for (let k = 1; k < this.queue.length; k++) if (cost(this.queue[k]) < cost(this.queue[at])) at = k
+      }
       const j = this.queue.splice(at, 1)[0]
       if (this.cached.has(j) || this.fetching.has(j)) continue
       this.fetching.add(j)
+      net++
       // the frame on screen and its neighbours are decoded straight away; the rest are only cached
       const near = decode && Math.abs(j - i) <= 1
       if (near) this.decoding.add(j)
-      send({ k: near ? 'decode' : 'fetch', seq: this.spec.id, i: j, url: this.spec.url(j) })
+      send({ k: near ? 'decode' : 'fetch', seq: this.spec.id, i: j, url: this.spec.url(j), hi: decode })
     }
+  }
+
+  /**
+   * Fetch and decode one frame and nothing else (a neighbour's entry frame, so the cut or crossfade onto it draws at
+   * once). pump() would keep starting fetches across the whole set on every call.
+   */
+  pumpOne(i: number) {
+    if (this.stopped || i < 0 || i >= this.spec.frames || this.bitmaps.has(i) || this.decoding.has(i) || this.fetching.has(i)) return
+    if (this.cached.has(i)) {
+      this.decoding.add(i)
+      send({ k: 'decode', seq: this.spec.id, i, url: this.spec.url(i), hi: true })
+      return
+    }
+    if (net >= PARALLEL) return
+    const q = this.queue.indexOf(i)
+    if (q >= 0) this.queue.splice(q, 1)
+    this.fetching.add(i)
+    this.decoding.add(i)
+    net++
+    send({ k: 'decode', seq: this.spec.id, i, url: this.spec.url(i), hi: true })
   }
 
   /** a message from the worker */
   take(m: FromWorker) {
-    this.fetching.delete(m.i)
+    const freed = this.fetching.delete(m.i)
+    if (freed) net--
     this.decoding.delete(m.i)
+    // a freed slot also restarts the other sets waiting on the shared cap (a prefetch that found it full started
+    // nothing, and its own completions are the only other thing that pumps it); a paused set stays paused
+    if (freed) queueMicrotask(() => {
+      for (const s of sequences.values()) if (s !== this && net < PARALLEL - RESERVE) s.wake()
+    })
     if (m.k === 'failed') return
     if (this.auto && !this.stopped) queueMicrotask(() => this.pump(this.at, false))
     if (!this.cached.has(m.i)) {
@@ -202,18 +260,20 @@ export class Sequence {
     if (m.k === 'decoded') {
       if (this.stopped) return m.bitmap.close()
       this.bitmaps.set(m.i, m.bitmap)
-      this.evict(m.i)
+      this.evict(this.at)
     }
   }
 
   /** Hold the bitmap cap by closing the decoded frame furthest from the one just drawn. Its bytes stay in the worker. */
   private evict(near: number) {
+    // a frame behind the scroll counts double: the window keeps more of what is coming than of what has gone by
+    const far = (i: number) => ((i - near) * this.dir >= 0 ? Math.abs(i - near) : Math.abs(i - near) * 2)
     while (this.bitmaps.size > this.lru) {
       let worst = -1
       let dist = -1
       for (const i of this.bitmaps.keys())
-        if (Math.abs(i - near) > dist) {
-          dist = Math.abs(i - near)
+        if (far(i) > dist) {
+          dist = far(i)
           worst = i
         }
       this.bitmaps.get(worst)!.close()
@@ -229,6 +289,11 @@ export class Sequence {
     if (this.auto) return
     this.auto = true
     this.pump(this.at, false)
+  }
+
+  /** a prefetching set with frames still to fetch takes a free slot (take(), when another set's fetch finishes) */
+  wake() {
+    if (this.auto && !this.stopped && this.queue.length) this.pump(this.at, false)
   }
 
   /** Stop starting new fetches (in-flight ones finish); prefetch() resumes. The warm cache parks far sets with it. */
@@ -247,6 +312,8 @@ export class Sequence {
     for (const b of this.bitmaps.values()) b.close()
     this.bitmaps.clear()
     this.queue = []
+    net -= this.fetching.size
+    this.fetching.clear()
     sequences.delete(this.spec.id)
     send({ k: 'free', seq: this.spec.id })
   }
@@ -256,11 +323,14 @@ export interface StagePos {
   /** the sequence on screen, and where inside it (0..1) */
   seq: Sequence
   at: number
-  /** the sequence being crossed into, and how far the fade has gone (0..1) */
+  /** the sequence being crossed into, the frame it is entered on, and how far the fade has gone (0..1) */
   next?: Sequence
+  nextAt?: number
   fade?: number
   /** ignore a decoded neighbour further than this many frames from the one asked for */
   slack?: number
+  /** the last frame this position may show, crossfade included (a trimmed clip's end) */
+  last?: number
 }
 
 /**
@@ -275,9 +345,20 @@ export function createStage(canvas: HTMLCanvasElement) {
   let shown = -1
   let last = ''
   let owner: Sequence | null = null
+  /** share of the next frame blended over the one shown (0: a whole frame) */
+  let mix = 0
+  /** the canvas holds a picture (any set's): from then on a far neighbour never replaces it */
+  let painted = false
+  /** the last draw held an older frame (or a neighbour): the next exact frame blends in over two draws */
+  let settle = 0
 
   const resize = () => {
-    const next = [Math.round(canvas.clientWidth * dpr()), Math.round(canvas.clientHeight * dpr())]
+    // device px, but never more than a frame covers at its native size: past that the canvas would scale the frame up
+    // (a resample that only softens it); the browser stretches a capped canvas once, on the GPU, when it composites
+    const cw = canvas.clientWidth * dpr()
+    const ch = canvas.clientHeight * dpr()
+    const k = Math.min(1, 1 / Math.max(cw / NATIVE_W, ch / NATIVE_H))
+    const next = [Math.round(cw * k), Math.round(ch * k)]
     if (next[0] === w && next[1] === h) return
     ;[w, h] = next
     canvas.width = w
@@ -286,6 +367,7 @@ export function createStage(canvas: HTMLCanvasElement) {
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
     last = ''
+    painted = false
   }
 
   /** cover: scale to fill the canvas, crop the long axis */
@@ -298,26 +380,53 @@ export function createStage(canvas: HTMLCanvasElement) {
 
   const draw = (pos: StagePos) => {
     if (!w || !h) return shown
-    const i = pos.seq.index(pos.at)
+    const frames = pos.seq.spec.frames
+    const end = Math.min(frames - 1, pos.last ?? frames - 1)
+    // the scroll position between two whole frames: frame `base`, with `frac` of the next one blended over it
+    const exact = Math.min(end, Math.max(0, pos.at * (frames - 1)))
+    const base = Math.floor(exact)
+    const frac = base < end ? exact - base : 0
+    const i = Math.round(exact)
     pos.seq.pump(i)
     const fade = pos.next && pos.fade ? Math.min(1, pos.fade) : 0
     const close = (hit: { bitmap: ImageBitmap; at: number } | null, j: number) =>
       hit && (pos.slack === undefined || Math.abs(hit.at - j) <= pos.slack) ? hit : null
-    const now = close(pos.seq.nearest(i), i)
+    // this set's fallback never shows a frame past a trimmed end (hf-ship: the placard), slack or not
+    const inTrim = (hit: { bitmap: ImageBitmap; at: number } | null) => (hit && hit.at <= end ? hit : null)
+    // the frame shown is `base` when it is decoded (the next one blends over it), else the decoded frame nearest the
+    // position: never an undecoded frame, never a blank canvas. Once the canvas holds a picture, a neighbour more than
+    // MAX_OFF frames away is not drawn: the picture holds until a frame near the scroll has decoded (PR #324 item 5)
+    let now = inTrim(close(pos.seq.nearest(pos.seq.exact(base) ? base : i), i))
+    const held = !!now && painted && Math.abs(now.at - i) > MAX_OFF
+    if (held) now = null
+    // 1/16 steps: a sixteenth of a frame's change is below what the eye sees, and the stamp stays cheap to compare
+    const q = Math.round(frac * 16) / 16
+    const over = now && now.at === base && q > 0 ? pos.seq.exact(base + 1) : null
     let into: { bitmap: ImageBitmap; at: number } | null = null
     if (pos.next) {
-      const j = pos.next.index(0)
+      const j = pos.nextAt ?? pos.next.index(0)
       pos.next.pump(j)
-      into = fade > 0 ? close(pos.next.nearest(j), j) : null
+      const hit = fade > 0 ? pos.next.nearest(j) : null
+      into = hit && Math.abs(hit.at - j) <= MAX_OFF ? hit : null
     }
-    // nothing of this set decoded yet: -1, so the stage shows the poster rather than the last set's picture
-    if (!now && !into) return owner === pos.seq ? shown : -1
+    // nothing of this set decoded near the scroll yet: the last picture holds (-1 for another set's, so the stage keeps it)
+    if (!now && !into) {
+      if (held || !painted) settle = 2
+      return owner === pos.seq ? shown : -1
+    }
     owner = pos.seq
-    const stamp = `${pos.seq.spec.id}:${now?.at ?? -1}:${into?.at ?? -1}:${fade.toFixed(3)}`
+    const m = over ? q : 0
+    // a frame that arrives after a hold blends over the held picture (the canvas keeps it) in two steps, not a pop
+    const a = settle === 2 ? 0.5 : 1
+    const stamp = `${pos.seq.spec.id}:${now?.at ?? -1}:${m}:${into?.at ?? -1}:${fade.toFixed(3)}:${settle}`
     if (stamp === last) return shown
     last = stamp
-    if (now) paint(now.bitmap, 1)
-    if (into) paint(into.bitmap, now ? fade : 1)
+    if (now) paint(now.bitmap, painted ? a : 1)
+    if (over) paint(over, m * (painted ? a : 1))
+    if (into) paint(into.bitmap, now || painted ? fade : 1)
+    painted = true
+    settle = settle > 0 ? settle - 1 : 0
+    mix = m
     shown = (fade >= 0.5 ? into?.at : now?.at) ?? now?.at ?? into!.at
     return shown
   }
@@ -327,6 +436,10 @@ export function createStage(canvas: HTMLCanvasElement) {
     draw,
     get frame() {
       return shown
+    },
+    /** share of the next frame blended over `frame` (0..1) */
+    get mix() {
+      return mix
     },
   }
 }

@@ -382,7 +382,7 @@ for (const [name, prof] of Object.entries(PROFILES)) {
         test.setTimeout(120_000)
         const r = await get(browser, hash, 'idle')
         hygiene(r, `idle ${hash}`, prof)
-        const want = hash ? ['hf-ponds'] : ['hf-depart']
+        const want = hash ? ['cg-ponds'] : ['cg-depart-1']
         save(`idle${hash}`, { loadstart: r.loadstart, lcp: Math.round(r.lcp), slots: r.slots })
         for (const id of want) expect.soft(r.loadstart[id], `${id} loadstart`).toBeGreaterThan(0)
         expect.soft(r.lcp, 'LCP (ms)').toBeLessThanOrEqual(2500)
@@ -396,7 +396,7 @@ for (const [name, prof] of Object.entries(PROFILES)) {
       expect(slots.length, 'decoder pool').toBe(prof.mobile ? 4 : 5)
       for (const s of slots) expect(Object.keys(s).sort()).toEqual(['dead', 'id', 'painted', 'ready', 'readyState'])
       // a desktop opens on the frame set, not a decoder
-      if (prof.mobile) expect(slots.find((s) => s.id === 'hf-ponds')?.readyState, 'first clip decoded').toBeGreaterThanOrEqual(2)
+      if (prof.mobile) expect(slots.find((s) => s.id === 'cg-ponds')?.readyState, 'first clip decoded').toBeGreaterThanOrEqual(2)
     })
   })
 }

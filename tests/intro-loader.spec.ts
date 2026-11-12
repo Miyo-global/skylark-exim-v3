@@ -96,7 +96,7 @@ test('/story: the intro counts up to 100 % and opens once the first clip is in m
   const cache = await page.evaluate(() => (window as unknown as { __warmCache: { path: string; ids: string[]; opening: boolean; warm: boolean } }).__warmCache)
   expect(cache.path).toBe('ocean')
   expect(cache.opening).toBe(true)
-  expect(await opened(page, 'hf-depart')).toBe(true)
+  expect(await opened(page, 'cg-depart-1')).toBe(true)
   await expect(page.locator('html')).not.toHaveClass(/is-locked/)
 })
 
@@ -133,8 +133,8 @@ test('a deep link loads its own path behind the intro and lands on it', async ({
   await page.waitForSelector('#boot', { state: 'detached', timeout: 120_000 })
   const cache = await page.evaluate(() => (window as unknown as { __warmCache: { path: string; ids: string[]; opening: boolean } }).__warmCache)
   expect(cache).toMatchObject({ path: 'pond', opening: true })
-  expect(await opened(page, 'hf-ponds')).toBe(true)
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __scrub?: { id: string | null } }).__scrub?.id), { timeout: 10_000 }).toBe('hf-ponds')
+  expect(await opened(page, 'cg-ponds')).toBe(true)
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __scrub?: { id: string | null } }).__scrub?.id), { timeout: 10_000 }).toBe('cg-ponds')
 })
 
 test('the intro: wordmark, hairline and percentage, dark from the first paint, no layout shift (#270)', async ({ page }) => {

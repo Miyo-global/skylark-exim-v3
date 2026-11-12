@@ -1,7 +1,7 @@
 import { Line } from '@react-three/drei'
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Suspense, use, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { ACESFilmicToneMapping, AdditiveBlending, BackSide, Color, Group, ImageBitmapLoader, MathUtils, Quaternion, SRGBColorSpace, Texture, Vector2, Vector3, type Mesh, type Object3D } from 'three'
+import { ACESFilmicToneMapping, AdditiveBlending, BackSide, Color, Group, MathUtils, Quaternion, SRGBColorSpace, Texture, Vector2, Vector3, type Mesh, type Object3D } from 'three'
 import type { Line2 } from 'three-stdlib'
 import { MARKET_COORDS, MARKET_COUNT, MARKETS_BY_REGION, ORIGIN } from '../config/markets'
 import { env } from '../engine/env'
@@ -9,7 +9,7 @@ import { frame } from '../engine/store'
 import { onTick, startClock } from '../engine/ticker'
 import { faceRotation, latLon, routePoints, toLatLon } from './geo'
 import { calm } from './calm'
-import { GLOBE_TEXTURE, globeUi, type GlobeKind } from './globeState'
+import { earthBitmap, globeUi, type GlobeKind } from './globeState'
 
 /** the world card's thin-line globe (#269): brass arcs and origin, ice market dots (tokens.css --brass, --ice) */
 const BRASS = new Color('#e08a5f')
@@ -79,14 +79,8 @@ const haze = {
 
 export type GlobeLabels = { markets: (HTMLSpanElement | null)[]; origin: HTMLSpanElement | null }
 
-const bitmapOptions = (l: ImageBitmapLoader) => void l.setOptions({ imageOrientation: 'flipY' })
-/** decodes the earth texture ahead of the mount (#274): an ImageBitmap is decoded off the main thread */
-export const preloadGlobe = (kind: GlobeKind) =>
-  GLOBE_TEXTURE[kind].then(async (url) => {
-    // a low-priority fetch first, so the texture queues behind everything the page is still loading; the loader then reads it from the cache
-    await fetch(url, { priority: 'low' } as RequestInit).then((r) => r.arrayBuffer()).catch(() => {})
-    return useLoader.preload(ImageBitmapLoader, url, bitmapOptions)
-  })
+/** decodes the earth texture ahead of the mount (#274): the one shared fetch and decode (globeState earthBitmap) */
+export const preloadGlobe = (kind: GlobeKind) => earthBitmap(kind)
 
 /**
  * Scroll-driven globe: camera pulls back from the sea off Visakhapatnam, routes draw one by one (STORY §11).
@@ -98,7 +92,7 @@ function Earth({ worldIndex, labels, live, onWarm }: { worldIndex: number; label
   const standalone = worldIndex < 0
   // homepage: 4096×2048 desktop, 2048×1024 phones; film: 2048×1024 (#274). An ImageBitmap is decoded off the main thread, so the upload below is a
   // copy, not a decode; it runs in an idle slice (below), mipmapped, with the GPU's full anisotropy for the limb.
-  const bitmap = useLoader(ImageBitmapLoader, use(GLOBE_TEXTURE[standalone ? 'home' : 'film']), bitmapOptions)
+  const bitmap = use(earthBitmap(standalone ? 'home' : 'film'))
   const { camera, invalidate, gl, scene, get } = useThree()
   const tex = useMemo(() => {
     // storage for the full mip chain, filled in idle slices (below)
@@ -224,7 +218,7 @@ function Earth({ worldIndex, labels, live, onWarm }: { worldIndex: number; label
       if (!cap?.height) return
       if (env.mobile) {
         // phones: the globe sits above the market list
-        lay.r = Math.max(60, Math.min(vw * 0.4, (cap.top - HEADER) / 2 - 10))
+        lay.r = Math.max(24, Math.min(vw * 0.4, (cap.top - HEADER) / 2 - 10))
         lay.cx = vw / 2
         lay.cy = (HEADER + cap.top) / 2
       } else {
@@ -375,7 +369,9 @@ function Earth({ worldIndex, labels, live, onWarm }: { worldIndex: number; label
       }
 
       // camera: close over the sea off Visakhapatnam → the full globe at its laid-out size and place
-      const k = ease(clamp01(p / 0.5))
+      // phones: the list shows from 0.08 of the chapter (chapters.ts), so the globe is at its laid-out size by then and
+      // never sits over the list
+      const k = ease(clamp01(p / (env.mobile ? 0.08 : 0.5)))
       const dEnd = Math.sqrt(1 + (vh / (2 * TAN * lay.r)) ** 2)
       const d = lerp(1.45, dEnd, k)
       camera.position.set(0, 0, d)

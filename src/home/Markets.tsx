@@ -4,6 +4,7 @@ import { MarketList } from '../sections/MarketList'
 import { store } from '../engine/store'
 import { calm } from '../three/calm'
 import { GLOBE_POSTER, PHONE } from '../three/globeState'
+import { texUrl } from '../film/media'
 import { duringIntro } from '../ui/Loader'
 import * as m from 'motion/react-m'
 import { reveal, rise } from '../motion/tokens'
@@ -62,7 +63,7 @@ export function Markets() {
         {/* the live globe's first view: a fallback, shown only if the globe hasn't drawn by the time it's on screen (#274) */}
         <picture>
           <source type="image/avif" srcSet={GLOBE_POSTER('avif')} sizes={POSTER_SIZES} />
-          <img ref={poster} className="globe-ph" srcSet={GLOBE_POSTER('webp')} sizes={POSTER_SIZES} src="/textures/globe-home_1280.webp" alt="" width={2560} height={2560} loading="lazy" decoding="async" />
+          <img ref={poster} className="globe-ph" srcSet={GLOBE_POSTER('webp')} sizes={POSTER_SIZES} src={texUrl('globe-home_1280.webp')} alt="" width={2560} height={2560} loading="lazy" decoding="async" />
         </picture>
         {mounted && (
           <Suspense fallback={null}>

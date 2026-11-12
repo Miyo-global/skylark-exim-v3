@@ -1,7 +1,7 @@
 import { COPY_RIGHT, type ChapterDef, type Media } from '../config/chapters'
 import { heroPoster } from '../config/hero'
 import { env } from '../engine/env'
-import { SEQ, TOP, type Codec, type Tier } from './manifest'
+import { MEDIA_V, SEQ, TOP, type Codec, type Tier } from './manifest'
 import { mediaUrl } from './media'
 
 export interface Segment {
@@ -15,6 +15,8 @@ export interface Segment {
   scrim?: ChapterDef['scrim']
   /** the chapter's copy sits in the right-hand column (the soft scrim shades that side) */
   right?: boolean
+  /** this segment's desktop scroll length in vh (its share of the chapter's) */
+  vh: number
 }
 
 /**
@@ -25,7 +27,7 @@ export function toSegments(chapters: ChapterDef[]): Segment[] {
   return chapters.flatMap((ch, chapter) =>
     segmentBounds(ch).map(([from, to], j, all) => {
       const last = j === all.length - 1
-      return { media: ch.media[j], chapter, from, to, join: last ? ch.joinNext : ('crossfade' as const), scrim: ch.scrim, right: COPY_RIGHT.has(ch.id) }
+      return { media: ch.media[j], chapter, from, to, vh: ch.vh * (to - from), join: last ? ch.joinNext : ('crossfade' as const), scrim: ch.scrim, right: COPY_RIGHT.has(ch.id) }
     }),
   )
 }
@@ -49,7 +51,8 @@ const TYPES: Record<Codec, string> = {
   hevc: 'video/mp4; codecs="hvc1.1.6.L120.90"',
   h264: 'video/mp4; codecs="avc1.640028"',
 }
-const ORDER: Codec[] = ['av1', 'hevc', 'h264']
+/** phones: AV1, else H.264 (PR #324: the phone tier has no HEVC files); desktop: AV1, HEVC, H.264 */
+const ORDER: Codec[] = env.mobile ? ['av1', 'h264'] : ['av1', 'hevc', 'h264']
 const probe = typeof document !== 'undefined' ? document.createElement('video') : null
 /**
  * One codec per visitor: AV1, else HEVC (Safari), else H.264. A first pick from canPlayType, so the first clip can load at
@@ -104,8 +107,14 @@ export const avifReady = new Promise<boolean>((done) => {
 })
 const img = (name: string) => mediaUrl(`${name}.${avif ? 'avif' : 'webp'}`)
 
-/** first frame of a clip at the media tier (posters follow the clip: a 1920 clip gets a 1920 poster) */
-export const posterUrl = (id: string, w: Tier = W) => img(`${id}_${served(w)}`)
+/**
+ * first frame of a clip at the media tier (posters follow the clip: a 1920 clip gets a 1920 poster), else the largest
+ * poster tier below it that exists (the CG clips have no 2560 poster): never a URL for a file that isn't there
+ */
+const POSTER_TIERS = [2560, 1920, 1280, 960] as const
+const posterTier = (id: string, w: Tier): Tier =>
+  w === 'm' ? w : (POSTER_TIERS.find((t) => t <= w && `${id}_${t}.avif` in MEDIA_V) ?? 960)
+export const posterUrl = (id: string, w: Tier = W) => img(`${id}_${posterTier(id, served(w))}`)
 /** a clip's first frame as a home card, AVIF or WebP at 960 / 1280 / 1920 (covers 2× on a desktop card, 3× on a phone) */
 export const cardSrcSet = (id: string, ext: 'avif' | 'webp') => [960, 1280, 1920].map((w) => `${mediaUrl(`${id}_${w}.${ext}`)} ${w}w`).join(', ')
 /** stand-in stills (ph-*) come from 3840 px masters: the tier that covers the frame, up to 2560 */
@@ -114,16 +123,23 @@ const stillUrl = (id: string, w: Tier) => (id.startsWith('ph-') ? img(`${id}_${s
 
 /**
  * Desktop frame sequences (#hd2, chapters.ts SEQ_CLIPS): the stage canvas plays these clips frame by frame instead of a
- * <video>. Phones, Save-Data and 3G keep the video. One 1920 set on every desktop tier (scripts/clip-frames.sh): AVIF,
- * or WebP for a browser without AVIF.
+ * <video>. Phones, Save-Data and 3G keep the video. One 1920 AVIF set on every desktop tier (scripts/clip-frames.sh).
  */
 export const isSeq = (id: string) => !env.mobile && W !== 960 && W !== 'm' && id in SEQ
 export const seqFrames = (id: string) => SEQ[id]?.frames ?? 0
-export const seqUrl = (id: string, i: number) => `/media/${id}-f_1920_${String(i).padStart(3, '0')}.${avif ? 'avif' : 'webp'}?v=${SEQ[id]?.v}`
+/**
+ * One 1920 AVIF set per CG clip (PR #324, 12 Nov): from the master, lanczos and a light unsharp, each set encoded at the
+ * highest crf whose SSIM still matches the sharp WebP q 55-70 KB sets (scripts/clip-frames.sh SSIM_MATCH), ~45-63 KB a
+ * frame. AVIF only: every desktop browser that runs the canvas decodes it (Chrome 85, Firefox 93, Safari 16)
+ */
+export const seqUrl = (id: string, i: number) => `/media/${id}-f_1920_${String(i).padStart(3, '0')}.avif?v=${SEQ[id]?.v}`
 
-/** First-frame poster for a segment, or null for gradient/globe. `w` is the media tier (tests pass each one). */
+/**
+ * First-frame poster for a segment, or null for gradient/globe and for a desktop frame-set clip (the canvas draws its
+ * frame 0; a poster under it would only be bytes). `w` is the media tier (tests pass each one).
+ */
 export function posterFor(m: Media, w: Tier = W): string | null {
-  if (m.kind === 'video') return posterUrl(m.id, w)
+  if (m.kind === 'video') return isSeq(m.id) ? null : posterUrl(m.id, w)
   if (m.kind === 'still') return stillUrl(m.poster, w)
   // documentation: a pre-blurred, darkened still (no live CSS blur over the stage)
   if (m.kind === 'dom') return stillUrl(`${m.poster}-blur`, w)

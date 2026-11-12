@@ -1,6 +1,5 @@
 /* Homepage below the hero (#233). Sections reuse sections.css; this adds the bands that only the homepage has. */
-/* section anchors clear the fixed bar */
-main section[id] { scroll-margin-top: 68px; }
+/* section anchors clear the fixed bar through the root's scroll-padding-top (chrome.css) */
 /* the intro is a short band: its own smaller step, and the section after it opens with the same space, so the
    hairline between them sits evenly (#275) */
 .section.home-intro { padding-block: var(--space-intro); }

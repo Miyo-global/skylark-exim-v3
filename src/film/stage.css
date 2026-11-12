@@ -35,6 +35,21 @@
 }
 .stage.is-soft.is-right .stage__scrim { --side: 270deg; }
 @media (max-width: 819px) { .stage.is-soft.is-right .stage__scrim { --side: 90deg; } }
+/* CG chapters (scrim: 'cg'): no full-frame tint. A neutral (not navy) shade sits only behind the caption text, sized to
+   the caption block (bottom-left, or right for right-column chapters), so the boat and the light stay at full exposure.
+   tests/story-caption-contrast checks the copy over it. Phones: a bottom shade under the full-width caption. */
+.stage.is-cg .stage__scrim {
+  --corner: 0% 82%;
+  /* tall enough to reach the eyebrow line over bright water (p2: 2.2:1 at 64%). PR #324: the one-grade regrade lifted the
+     CG to the port's exposure (mean luma 146), so the shade is larger and darker (p1 eyebrow 3.68:1 at 0.72/0.62) */
+  background: radial-gradient(56% 92% at var(--corner), rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.74) 58%, rgba(0, 0, 0, 0) 100%);
+}
+.stage.is-cg.is-right .stage__scrim { --corner: 100% 82%; }
+@media (max-width: 819px) {
+  .stage.is-cg .stage__scrim, .stage.is-cg.is-right .stage__scrim {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.72) 44%, rgba(0, 0, 0, 0) 70%);
+  }
+}
 /* the world chapter's scroll spacer lets pointers through to the globe under it (its copy re-enables its own) */
 .chapter[data-chapter="world"] { pointer-events: none; }
 

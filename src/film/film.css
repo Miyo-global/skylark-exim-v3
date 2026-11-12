@@ -17,8 +17,12 @@
 }
 .caption::before { content: ''; position: absolute; left: -14px; top: 0.35em; width: 1px; height: 2.75rem; background: rgba(224, 138, 95, 0.85); }
 .caption--light::before { background: var(--brass-ink); }
-.caption__eyebrow { display: flex; align-items: baseline; gap: 0.75em; color: var(--brass); margin-bottom: 1.2rem; letter-spacing: 0.06em; }
-.caption__num { font-family: var(--f-display); font-size: 1.6em; line-height: 1; color: var(--ice); font-variant-numeric: lining-nums tabular-nums; }
+/* off-white, not brass: 12 px brass over the bright dawn water measured 1.3-2.6:1 (tests/story-caption-contrast); the brass
+   accent stays on the rule line (::before) */
+.caption__eyebrow { display: flex; align-items: baseline; gap: 0.5em; color: var(--ice); margin-bottom: 1.2rem; font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.caption__num { color: var(--ice); font-variant-numeric: tabular-nums; }
+/* SplitText words (captions.ts): inline-block so each word can rise through its line's mask */
+.caption__title .word { display: inline-block; }
 /* 13ch, never wider than the column: a SplitText line mask is the column's width and clips whatever runs past it */
 .caption__title { font-size: clamp(2.75rem, 2rem + 3.4vw, 6rem); max-width: min(13ch, 100%); text-wrap: balance; overflow-wrap: break-word; }
 /* right-hand column chapters: copy sits right, the scrim follows it */
@@ -44,7 +48,8 @@
 .caption--markets { top: 68px; bottom: 0; height: fit-content; margin: auto 0; width: min(36rem, 44vw); }
 /* phones: the globe takes the top of the screen, the copy stacks under it */
 @media (max-width: 819px) {
-  .caption--markets { top: auto; margin: 0; width: calc(100vw - 2 * var(--gutter)); }
+  /* bottom: above the world cue pill (stage.css, 14px from the bottom), so the pill never sits on the country list */
+  .caption--markets { top: auto; bottom: 82px; margin: 0; width: calc(100vw - 2 * var(--gutter)); }
   .caption--markets .caption__eyebrow { margin-bottom: 0.6rem; }
   .caption--markets .caption__title { font-size: clamp(2.25rem, 10vw, 2.75rem); }
 }

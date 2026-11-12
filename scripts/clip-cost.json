@@ -1,9 +1,5 @@
 {
   "opening": 2359,
-  "hf-depart": 4007,
-  "hf-catch": 6434,
-  "hf-ice": 5901,
-  "hf-return": 4557,
   "hf-arrive": 3954,
   "hf-reverse": 4488,
   "hf-unload-fish": 2261,
@@ -21,7 +17,6 @@
   "hf-port-5": 3500,
   "hf-ship": 6442,
   "hf-sail": 2795,
-  "hf-ponds": 4484,
   "hf-sample": 5491,
   "hf-harvest": 8017,
   "hf-sort": 6664,
@@ -31,5 +26,18 @@
   "hf-peel": 2177,
   "hf-lab": 1912,
   "hf-iqf": 4308,
-  "hf-pack": 1749
+  "hf-pack": 1749,
+  "cg-depart-1": 1723,
+  "cg-depart-2": 1757,
+  "cg-depart-3": 1596,
+  "cg-catch": 2847,
+  "cg-ice": 2847,
+  "cg-return": 2847,
+  "cg-ponds": 2847,
+  "cg-sample": 2847,
+  "cg-harvest": 2847,
+  "cg-arrive": 3954,
+  "cg-port": 3882,
+  "cg-ship": 6442,
+  "cg-sail": 3500
 }

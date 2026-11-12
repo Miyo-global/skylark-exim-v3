@@ -16,11 +16,11 @@ export const clipFile = (id: string, tier: Tier, codec: Codec) => `${id}_${tier}
 
 /**
  * Budgets per /story path and per file (TRD §13, #264; tests/weight.spec.ts, tests/hd.spec.ts). Per tier, because a
- * device downloads one tier. #hd2: every desktop tier (1280, 1920 and the 2560 retina one) 60 MB a path, each clip file
+ * device downloads one tier. #hd2: every desktop tier (1280, 1920 and the 2560 retina one) 90 MB a path (PR #324; was 60), each clip file
  * up to 6,000 KB, now that desktop streams a clip only when its chapter is near (src/film/warmcache.ts) instead of
  * fetching the whole path after the first screen (was 28 / 28 / 40 MB and 2,300 KB). Phones stay at 12 MB.
  */
-const BUDGET: Record<Tier, number> = { m: 12e6, 960: 12e6, 1280: 60e6, 1920: 60e6, 2560: 60e6 }
+const BUDGET: Record<Tier, number> = { m: 30e6, 960: 12e6, 1280: 90e6, 1920: 90e6, 2560: 90e6 }
 export const FILE_CAP = 6000 * 1024
 /**
  * What a /story path downloads besides /media (document, JS, CSS, fonts, globe placeholder and texture): the baseline
@@ -42,13 +42,13 @@ const hash = (buf: Buffer) => createHash('sha256').update(buf).digest('hex').sli
 export const versioned = (f: string) => `/media/${f}${existsSync(media(f)) ? `?v=${hash(readFileSync(media(f)))}` : ''}`
 const PATHS = ['ocean', 'pond'] as const
 /**
- * Frame sequences (#hd2, chapters.ts SEQ_CLIPS, scripts/clip-frames.sh): <id>-f_1920_NNN.avif (+ .webp). Every desktop
- * tier downloads the one AVIF set instead of the clip's video.
+ * Frame sequences (#hd2, chapters.ts SEQ_CLIPS, scripts/clip-frames.sh): <id>-f_1920_NNN.avif. Every desktop tier
+ * downloads the one AVIF set instead of the clip's video.
  */
-const seqFrames = (id: string, ext = 'avif') =>
-  existsSync(media('')) ? readdirSync(media('')).filter((f) => f.startsWith(`${id}-f_1920_`) && f.endsWith(`.${ext}`)) : []
+const seqFrames = (id: string, ext = 'avif', tier = 1920) =>
+  existsSync(media('')) ? readdirSync(media('')).filter((f) => f.startsWith(`${id}-f_${tier}_`) && f.endsWith(`.${ext}`)) : []
 export const isSeq = (id: string) => SEQ_CLIPS.includes(id) && seqFrames(id).length > 0
-/** bytes a desktop downloads for a sequence clip */
+/** bytes a desktop downloads for a sequence clip: its 1920 AVIF set (PR #324: as small as it goes at the sharp WebP's SSIM) */
 const seqBytes = (id: string, _t?: Tier) => seqFrames(id).reduce((a, f) => a + fileSize(f), 0)
 const fileSize = (f: string) => (existsSync(media(f)) ? statSync(media(f)).size : 0)
 const pathClips = (p: (typeof PATHS)[number]) => [
@@ -150,14 +150,14 @@ export function topTier(codec: Codec, size: (f: string) => number | null) {
  * every file in public/media. The hash goes on the URL (`?v=`), so /media/* is cached immutably and a re-encoded file is
  * still picked up. Rewritten on every build (only when it changed); committed, so typecheck runs without a build.
  */
-/** a frame of a frame sequence: <id>-f_1920_NNN.{avif,webp} */
-const FRAME = /-f_1920_\d+\.(avif|webp)$/
+/** a frame of a frame sequence: <id>-f_1920_NNN.webp (older sets: .avif, 2560) */
+const FRAME = /-f_(1920|2560)_\d+\.(avif|webp)$/
 
 export function manifestSource() {
   const files = readdirSync(media('')).filter((f) => !f.startsWith('.'))
   const v = new Map(files.map((f) => [f, hash(readFileSync(media(f)))]))
   // one hash per set, over every frame's hash in both formats: any re-encoded frame gives the set a new URL
-  const setHash = (id: string) => hash(Buffer.from([...seqFrames(id), ...seqFrames(id, 'webp')].sort().map((f) => v.get(f)).join('')))
+  const setHash = (id: string) => hash(Buffer.from(seqFrames(id).sort().map((f) => v.get(f)).join('')))
   const size = (f: string) => (v.has(f) ? readFileSync(media(f)).length : null)
   const top = Object.fromEntries(CODECS.map((c) => [c, topTier(c, size)]))
   const paths = PATHS.map((path) => {
@@ -205,11 +205,11 @@ ${paths.join('\n')}
 export const TOP: Record<Codec, 1920 | 2560> = { ${CODECS.map((c) => `${c}: ${top[c].top}`).join(', ')} }
 
 /**
- * desktop frame sequences (chapters.ts SEQ_CLIPS, #hd2): frames per clip, bytes of its 1920 set (AVIF, WebP), and one
- * content hash for the whole set (segments.ts seqUrl puts it on every frame's URL)
+ * desktop frame sequences (chapters.ts SEQ_CLIPS, #hd2): frames per clip, bytes of its 1920 AVIF set (from the
+ * master), and one content hash for the whole set (segments.ts seqUrl puts it on every frame's URL)
  */
-export const SEQ: Record<string, { frames: number; avif: number; webp: number; v: string }> = {
-${SEQ_CLIPS.filter(isSeq).map((id) => `  '${id}': { frames: ${seqFrames(id).length}, avif: ${seqBytes(id)}, webp: ${seqFrames(id, 'webp').reduce((a, f) => a + fileSize(f), 0)}, v: '${setHash(id)}' },`).join('\n')}
+export const SEQ: Record<string, { frames: number; bytes: number; v: string }> = {
+${SEQ_CLIPS.filter(isSeq).map((id) => `  '${id}': { frames: ${seqFrames(id).length}, bytes: ${seqBytes(id)}, v: '${setHash(id)}' },`).join('\n')}
 }
 
 /**
@@ -218,6 +218,14 @@ ${SEQ_CLIPS.filter(isSeq).map((id) => `  '${id}': { frames: ${seqFrames(id).leng
  */
 export const MEDIA_V: Record<string, string> = {
 ${[...v].filter(([f]) => !FRAME.test(f)).sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, h]) => `  '${f}': '${h}',`).join('\n')}
+}
+
+/**
+ * content hash of every file in public/textures (the globe's maps and placeholders); texUrl (film/media.ts) puts it on
+ * the URL, so /textures/* is cached immutably (vercel.json) and each file is fetched once
+ */
+export const TEXTURE_V: Record<string, string> = {
+${readdirSync('public/textures').filter((f) => !f.startsWith('.')).sort().map((f) => `  '${f}': '${hash(readFileSync(`public/textures/${f}`))}',`).join('\n')}
 }
 `
 }

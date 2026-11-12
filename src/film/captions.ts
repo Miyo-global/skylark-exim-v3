@@ -37,7 +37,7 @@ export function bindCaptions(sections: HTMLElement[], chapters: ChapterDef[]) {
       const h = c.el.querySelector<HTMLElement>('.caption__title')
       // reduceWhiteSpace would turn the no-break space in "−18 °C" into a plain one (a /\s+/ replace), letting the
       // temperature break across lines; titles have no runs of whitespace to collapse (#146)
-      if (h) c.split = SplitText.create(h, { type: 'lines', mask: 'lines', linesClass: 'line', autoSplit: true, reduceWhiteSpace: false })
+      if (h) c.split = SplitText.create(h, { type: 'lines,words', mask: 'lines', linesClass: 'line', wordsClass: 'word', autoSplit: true, reduceWhiteSpace: false })
     }
   })
 }
@@ -82,7 +82,7 @@ export function updateCaptions(ch: ChapterDef, index: number, p: number, force =
 }
 
 function targets(c: Cap) {
-  return [c.el, ...(c.split?.lines ?? []), ...c.el.querySelectorAll('[data-fade],[data-card]')]
+  return [c.el, ...(c.split?.lines ?? []), ...(c.split?.words ?? []), ...c.el.querySelectorAll('[data-fade],[data-card]')]
 }
 
 /** Hard reset: invisible, no running tweens. */
@@ -97,7 +97,11 @@ function show(c: Cap) {
   gsap.set(el, { visibility: 'visible', autoAlpha: 1, y: 0 })
   if (env.reduced) return
   const fades = el.querySelectorAll('[data-fade]')
-  if (c.split) gsap.fromTo(c.split.lines, { yPercent: 100 }, { yPercent: 0, duration: 0.7, stagger: 0.06, ease: 'power3.out' })
+  // word by word: each word rises through its line's mask, a beat after the one before it
+  if (c.split) {
+    gsap.set(c.split.lines, { yPercent: 0 })
+    gsap.fromTo(c.split.words, { yPercent: 110 }, { yPercent: 0, duration: 0.65, stagger: 0.045, ease: 'power3.out' })
+  }
   if (fades.length) gsap.fromTo(fades, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.7, delay: 0.15, stagger: 0.06, ease: 'power3.out' })
   const cards = el.querySelectorAll('[data-card]')
   if (cards.length) gsap.fromTo(cards, { yPercent: 40, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.7, stagger: 0.06, delay: 0.15, ease: 'power3.out' })

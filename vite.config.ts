@@ -49,6 +49,19 @@ function orderWebhook(): Plugin {
   }
 }
 
+/** @react-three/fiber 9 builds its store with `new THREE.Clock()`, deprecated in three r183 (a warning per canvas): swap in the Timer-backed TimerClock (src/three/timerClock.ts). Build only; dev serves r3f prebundled. */
+function r3fTimer(): Plugin {
+  const clock = resolve(import.meta.dirname, 'src/three/timerClock.ts')
+  return {
+    name: 'r3f-timer',
+    apply: 'build',
+    transform(code, id) {
+      if (!id.includes('@react-three/fiber/dist/') || !code.includes('new THREE.Clock()')) return null
+      return `import { TimerClock as __TimerClock } from ${JSON.stringify(clock)};\n${code.replaceAll('new THREE.Clock()', 'new __TimerClock()')}`
+    },
+  }
+}
+
 // Three builds, so no page shares a chunk: a shared chunk adds a request before the hero paints (LCP budget).
 // '' → the homepage (and it empties dist), 'story' → the film, 'documents' → /quote and /news.
 const entries = process.env.BUILD_ENTRIES ?? ''
@@ -60,7 +73,7 @@ const INPUTS: Record<string, Record<string, string>> = {
 }
 
 export default defineConfig({
-  plugins: [clipManifest(), documentRoutes(), react(), staticHero(), orderWebhook()],
+  plugins: [clipManifest(), documentRoutes(), react(), r3fTimer(), staticHero(), orderWebhook()],
   build: {
     target: 'es2022',
     // three.js (lazy, the globe) and the homepage entry run past 500 kB on purpose: one request before the hero (LCP)
@@ -74,7 +87,7 @@ export default defineConfig({
           includeDependenciesRecursively: false,
           groups: [
             { name: 'three', test: /node_modules[\\/]three[\\/]/ },
-            { name: 'r3f', test: /node_modules[\\/]@react-three[\\/]/ },
+            { name: 'r3f', test: /node_modules[\\/]@react-three[\\/]|src[\\/]three[\\/]timerClock/ },
           ],
         },
       },

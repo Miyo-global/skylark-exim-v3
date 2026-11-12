@@ -40,7 +40,7 @@ export const exportsLine = { title: 'What we export', items: ['Vannamei and Blac
 export const film: Record<string, CaptionCopy[]> = {
   o1: [{ eyebrow: 'The Ocean · 01', title: 'Before the harbour wakes.', body: 'Based in Visakhapatnam, Andhra Pradesh. Raw material is sourced directly from farms or fishing vessels.' }],
   o2: [{ eyebrow: 'The Ocean · 02', title: 'Out of the water.', body: 'Initial quality checks (size, freshness, health) are done before acceptance.' }],
-  o3: [{ eyebrow: 'The Ocean · 03', title: 'On ice.', body: 'Premium raw fresh, chilled and frozen seafood.', chips: MARINE_FISH }],
+  o3: [{ eyebrow: 'The Ocean · 03', title: 'On ice.', body: 'The crew lay the catch in crates and shovel crushed ice over it. Premium raw fresh, chilled and frozen seafood.', chips: MARINE_FISH }],
   o4: [{ eyebrow: 'The Ocean · 04', title: 'Home under a chilled seal.', body: 'Transported under chilled conditions to the processing plant.' }],
   p1: [{ eyebrow: 'The Pond · 01', title: 'Partner farms on the Andhra coast.', body: 'Strategic partnerships with aquaculture farmers and a focus on responsible sourcing.' }],
   p2: [{ eyebrow: 'The Pond · 02', title: 'Every batch has a history.', body: 'We guarantee superior freshness, traceability, and product integrity across all markets.' }],

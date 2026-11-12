@@ -1,9 +1,9 @@
 import { statSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 
-/** Loader and first load (#86, #197, #preload): the intro holds until the path is in memory, so every stage poster is in
- * before it opens; each clip and each font downloads once, and the RFQ chunk waits for the form. */
-test('boot downloads each file once, every stage poster before the intro opens, no RFQ chunk', async ({ browser }) => {
+/** Loader and first load (#86, #197, #preload, perf/story-smooth-scroll): the opening poster is in before the intro opens;
+ * the other posters follow the scroll. Each clip and each font downloads once, and the RFQ chunk waits for the form. */
+test('boot downloads each file once, the opening poster before the intro opens, no RFQ chunk', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   const page = await ctx.newPage()
   const cdp = await ctx.newCDPSession(page)
@@ -43,8 +43,9 @@ test('boot downloads each file once, every stage poster before the intro opens, 
   const fonts = reqs.filter((f) => f.endsWith('.woff2'))
   expect(fonts.length, `fonts: ${fonts.join(', ')}`).toBe(new Set(fonts).size)
   const posters = new Set(firstScreen.filter((f) => /\.(webp|avif)$/.test(f)))
-  const stage = await page.evaluate(() => [...document.querySelectorAll<HTMLImageElement>('.stage img')].map((i) => new URL(i.currentSrc || i.src, location.href).pathname))
-  expect(stage.filter((f) => !posters.has(f)), 'stage posters loaded after the intro').toEqual([])
+  const stage = await page.evaluate(() => [...document.querySelectorAll<HTMLImageElement>('.stage img[src]')].map((i) => new URL(i.currentSrc || i.src, location.href).pathname))
+  expect(stage.length, 'opening poster set').toBeGreaterThan(0)
+  expect(posters.has(stage[0]), 'opening poster loaded before the intro').toBe(true)
   expect(reqs.some((f) => f.includes('RfqForm')), 'RFQ chunk loaded at boot').toBe(false)
   console.log(`before first scroll: ${(total / 1024).toFixed(0)} KB, ${reqs.length} requests, posters ${posters.size}`)
   await ctx.close()
