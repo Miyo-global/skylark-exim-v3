@@ -1,7 +1,7 @@
 import { COPY_RIGHT, type ChapterDef, type Media } from '../config/chapters'
 import { heroPoster } from '../config/hero'
 import { env } from '../engine/env'
-import { SEQ, TOP, type Codec, type Tier } from './manifest'
+import { MEDIA_V, SEQ, TOP, type Codec, type Tier } from './manifest'
 import { mediaUrl } from './media'
 
 export interface Segment {
@@ -104,8 +104,14 @@ export const avifReady = new Promise<boolean>((done) => {
 })
 const img = (name: string) => mediaUrl(`${name}.${avif ? 'avif' : 'webp'}`)
 
-/** first frame of a clip at the media tier (posters follow the clip: a 1920 clip gets a 1920 poster) */
-export const posterUrl = (id: string, w: Tier = W) => img(`${id}_${served(w)}`)
+/**
+ * first frame of a clip at the media tier (posters follow the clip: a 1920 clip gets a 1920 poster), else the largest
+ * poster tier below it that exists (the CG clips have no 2560 poster): never a URL for a file that isn't there
+ */
+const POSTER_TIERS = [2560, 1920, 1280, 960] as const
+const posterTier = (id: string, w: Tier): Tier =>
+  w === 'm' ? w : (POSTER_TIERS.find((t) => t <= w && `${id}_${t}.avif` in MEDIA_V) ?? 960)
+export const posterUrl = (id: string, w: Tier = W) => img(`${id}_${posterTier(id, served(w))}`)
 /** a clip's first frame as a home card, AVIF or WebP at 960 / 1280 / 1920 (covers 2× on a desktop card, 3× on a phone) */
 export const cardSrcSet = (id: string, ext: 'avif' | 'webp') => [960, 1280, 1920].map((w) => `${mediaUrl(`${id}_${w}.${ext}`)} ${w}w`).join(', ')
 /** stand-in stills (ph-*) come from 3840 px masters: the tier that covers the frame, up to 2560 */
@@ -121,9 +127,12 @@ export const isSeq = (id: string) => !env.mobile && W !== 960 && W !== 'm' && id
 export const seqFrames = (id: string) => SEQ[id]?.frames ?? 0
 export const seqUrl = (id: string, i: number) => `/media/${id}-f_1920_${String(i).padStart(3, '0')}.${avif ? 'avif' : 'webp'}?v=${SEQ[id]?.v}`
 
-/** First-frame poster for a segment, or null for gradient/globe. `w` is the media tier (tests pass each one). */
+/**
+ * First-frame poster for a segment, or null for gradient/globe and for a desktop frame-set clip (the canvas draws its
+ * frame 0; a poster under it would only be bytes). `w` is the media tier (tests pass each one).
+ */
 export function posterFor(m: Media, w: Tier = W): string | null {
-  if (m.kind === 'video') return posterUrl(m.id, w)
+  if (m.kind === 'video') return isSeq(m.id) ? null : posterUrl(m.id, w)
   if (m.kind === 'still') return stillUrl(m.poster, w)
   // documentation: a pre-blurred, darkened still (no live CSS blur over the stage)
   if (m.kind === 'dom') return stillUrl(`${m.poster}-blur`, w)

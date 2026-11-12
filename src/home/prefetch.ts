@@ -4,7 +4,7 @@ import { env } from '../engine/env'
 import { store, type Path } from '../engine/store'
 import { CLIPS } from '../film/manifest'
 import { avifReady, clipUrl, codecReady, isSeq, posterUrl } from '../film/segments'
-import { GLOBE_TEXTURE } from '../three/globeState'
+import { earthBitmap } from '../three/globeState'
 import type { Gate } from '../ui/Loader'
 import { heroReady } from './HomeHero'
 
@@ -46,8 +46,10 @@ export function prefetchStory(path: Path) {
   void storyScripts()
   const clip = firstClip(path)
   if (!clip) return
+  // a frame-set clip draws its own frame 0 on the canvas: no poster, no video
+  if (isSeq(clip.id)) return
   hint('prefetch', posterUrl(clip.id), 'image')
-  if (!isSeq(clip.id)) hint('prefetch', clipUrl(clip.id), 'video')
+  hint('prefetch', clipUrl(clip.id), 'video')
 }
 
 /** Hover or keyboard focus on any story link (nav, hero fork, story cards) warms /story; nothing loads before that. */
@@ -87,7 +89,7 @@ export function homeGate(mounted: Promise<void>): Gate {
         const posterJob = poster ? decodeAll([poster], tick) : Promise.resolve().then(tick)
         await Promise.all([heroReady.then(tick), posterJob])
         void decodeAll(rest, () => {})
-        void GLOBE_TEXTURE.home.then((u) => fetch(u)).then((r) => r.blob()).catch(() => null)
+        void earthBitmap('home').catch(() => null)
       })),
   }
 }

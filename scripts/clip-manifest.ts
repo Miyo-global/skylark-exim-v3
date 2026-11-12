@@ -219,6 +219,14 @@ ${SEQ_CLIPS.filter(isSeq).map((id) => `  '${id}': { frames: ${seqFrames(id).leng
 export const MEDIA_V: Record<string, string> = {
 ${[...v].filter(([f]) => !FRAME.test(f)).sort(([a], [b]) => (a < b ? -1 : 1)).map(([f, h]) => `  '${f}': '${h}',`).join('\n')}
 }
+
+/**
+ * content hash of every file in public/textures (the globe's maps and placeholders); texUrl (film/media.ts) puts it on
+ * the URL, so /textures/* is cached immutably (vercel.json) and each file is fetched once
+ */
+export const TEXTURE_V: Record<string, string> = {
+${readdirSync('public/textures').filter((f) => !f.startsWith('.')).sort().map((f) => `  '${f}': '${hash(readFileSync(`public/textures/${f}`))}',`).join('\n')}
+}
 `
 }
 

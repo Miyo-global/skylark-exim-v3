@@ -24,11 +24,20 @@
       ]
     },
     {
-      "source": "/(textures|media/news)/(.*)",
+      "source": "/media/news/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=3600, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/textures/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },

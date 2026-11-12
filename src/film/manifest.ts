@@ -1507,3 +1507,26 @@ export const MEDIA_V: Record<string, string> = {
   'prod-vannamei_960.avif': '27c8652b4b',
   'prod-vannamei_960.webp': 'c5e9bf3791',
 }
+
+/**
+ * content hash of every file in public/textures (the globe's maps and placeholders); texUrl (film/media.ts) puts it on
+ * the URL, so /textures/* is cached immutably (vercel.json) and each file is fetched once
+ */
+export const TEXTURE_V: Record<string, string> = {
+  'earth_day_2048.avif': 'ba343e792c',
+  'earth_day_2048.webp': '868ea545b4',
+  'earth_day_4096.avif': '22e086a219',
+  'earth_day_4096.webp': '5463a9c3b5',
+  'globe-home_1280.avif': '2c87d43fa3',
+  'globe-home_1280.webp': 'dd9a95dc7b',
+  'globe-home_2560.avif': 'afbc31c9a0',
+  'globe-home_2560.webp': '287ad621a1',
+  'globe-ph_1280.avif': 'df56fd9cb8',
+  'globe-ph_1280.webp': '843d058bba',
+  'globe-ph_1920.avif': '88321de73d',
+  'globe-ph_1920.webp': 'e621c1e1c6',
+  'globe-ph_2560.avif': '1b567bd488',
+  'globe-ph_2560.webp': '384f39427b',
+  'globe-ph_sq.avif': 'd241031b9f',
+  'globe-ph_sq.webp': '4f496d7d15',
+}

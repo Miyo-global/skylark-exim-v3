@@ -2,7 +2,7 @@ import { lazy, startTransition, Suspense, useEffect, useState } from 'react'
 import type { ChapterDef } from '../config/chapters'
 import { PORTRAIT } from '../config/hero'
 import { useApp } from '../engine/store'
-import { GLOBE_PH, GLOBE_TEXTURE, warmGlobePlaceholder } from '../three/globeState'
+import { GLOBE_PH, earthBitmap, warmGlobePlaceholder } from '../three/globeState'
 import { avifReady } from './segments'
 import '../sections/markets.css'
 
@@ -18,7 +18,7 @@ function prefetch() {
   idle(() => {
     void avifReady.then(warmGlobePlaceholder)
     void loadGlobe()
-    void GLOBE_TEXTURE.film.then((url) => fetch(url)).catch(() => {})
+    void earthBitmap('film').catch(() => {})
   })
 }
 
@@ -56,7 +56,7 @@ export function GlobeLayer({ chapters }: { chapters: ChapterDef[] }) {
           <source type="image/avif" media={PORTRAIT} srcSet={GLOBE_PH('avif').sq} />
           <source type="image/webp" media={PORTRAIT} srcSet={GLOBE_PH('webp').sq} />
           <source type="image/avif" srcSet={GLOBE_PH('avif').wide} sizes="100vw" />
-          <img className="globe-ph" src="/textures/globe-ph_1920.webp" srcSet={GLOBE_PH('webp').wide} sizes="100vw" alt="" decoding="async" />
+          <img className="globe-ph" src={GLOBE_PH('webp').fallback} srcSet={GLOBE_PH('webp').wide} sizes="100vw" alt="" decoding="async" />
         </picture>
       )}
       {near && mount && (
