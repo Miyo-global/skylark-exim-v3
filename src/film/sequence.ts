@@ -23,13 +23,17 @@ export const PARALLEL = env.mobile ? 3 : 6
 /** of those, the share a set that is not on screen may take: the set on screen always has RESERVE slots free */
 const RESERVE = 2
 /** decodes in flight at once per set, apart from the fetches: a decode never waits behind the network */
-const DECODES = env.mobile ? 2 : 3
+const DECODES = env.mobile ? 2 : 4
 /** fetches in flight, all sets */
 let net = 0
 /** Save-Data, 2G and 3G: every second frame only, half the bytes for half the frame density */
 const DENSITY = env.saveData || env.slow ? 2 : 1
 /** frames either side of the one on screen that count as "something is loaded here" */
 const NEAR = 2
+/** decoded ahead of the frame on screen, in the scroll's direction (up the page too); the rest of the LRU lies behind */
+const AHEAD = 24
+/** a decoded neighbour further off than this is never drawn in the frame's place: the last good frame holds (#324) */
+const MAX_OFF = 3
 /** device pixel ratio the canvas is sized at, capped: a 3× phone would cost 9× the pixels for no visible gain */
 export const DPR_CAP = 2
 export const dpr = () => Math.min(devicePixelRatio || 1, DPR_CAP)
@@ -97,6 +101,8 @@ export class Sequence {
   private at = 0
   /** the way the scroll last moved through this set: 1 down, -1 up */
   private dir = 1
+  /** fetch the frames nearest the scroll first, not coarse first (the set on screen and the next, after the first screen) */
+  fine = false
 
   /** how many frames this device loads at all (the density thins the set on a slow link) */
   private readonly wanted: number
@@ -177,10 +183,10 @@ export class Sequence {
     if (i !== this.at) this.dir = i < this.at ? -1 : 1
     const dir = this.dir
     this.at = i
-    // decode first: a cached frame near the scroll position is one message away from being drawable. Two thirds of the
-    // decoded window lies ahead of the scroll, a third behind it (a prefetch only fetches: no bitmaps off screen)
+    // decode first: a cached frame near the scroll position is one message away from being drawable. AHEAD frames of
+    // the decoded window lie ahead of the scroll, the rest behind it (a prefetch only fetches: no bitmaps off screen)
     if (decode) {
-      const ahead = Math.ceil((this.lru * 2) / 3)
+      const ahead = Math.min(AHEAD, Math.ceil((this.lru * 2) / 3))
       const behind = this.lru - 1 - ahead
       for (let d = 0; d <= ahead && this.decoding.size < DECODES; d++)
         for (const j of d === 0 ? [i] : d <= behind ? [i + dir * d, i - dir * d] : [i + dir * d])
@@ -198,7 +204,7 @@ export class Sequence {
       // of it first): the frames under the scroll never wait behind gaps far off.
       let at = 0
       const coarse = this.cached.size >= Math.ceil(this.wanted / 8)
-      if (this.cached.size > 0 && (!this.hasNear(i) || (decode && coarse))) {
+      if (this.cached.size > 0 && (!this.hasNear(i) || this.fine || (decode && coarse))) {
         const cost = (j: number) => ((j - i) * dir >= 0 ? Math.abs(j - i) : Math.abs(j - i) * 2)
         for (let k = 1; k < this.queue.length; k++) if (cost(this.queue[k]) < cost(this.queue[at])) at = k
       }
@@ -315,8 +321,9 @@ export interface StagePos {
   /** the sequence on screen, and where inside it (0..1) */
   seq: Sequence
   at: number
-  /** the sequence being crossed into, and how far the fade has gone (0..1) */
+  /** the sequence being crossed into, the frame it is entered on, and how far the fade has gone (0..1) */
   next?: Sequence
+  nextAt?: number
   fade?: number
   /** ignore a decoded neighbour further than this many frames from the one asked for */
   slack?: number
@@ -338,6 +345,10 @@ export function createStage(canvas: HTMLCanvasElement) {
   let owner: Sequence | null = null
   /** share of the next frame blended over the one shown (0: a whole frame) */
   let mix = 0
+  /** the canvas holds a picture (any set's): from then on a far neighbour never replaces it */
+  let painted = false
+  /** the last draw held an older frame (or a neighbour): the next exact frame blends in over two draws */
+  let settle = 0
 
   const resize = () => {
     const next = [Math.round(canvas.clientWidth * dpr()), Math.round(canvas.clientHeight * dpr())]
@@ -349,6 +360,7 @@ export function createStage(canvas: HTMLCanvasElement) {
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
     last = ''
+    painted = false
   }
 
   /** cover: scale to fill the canvas, crop the long axis */
@@ -375,27 +387,38 @@ export function createStage(canvas: HTMLCanvasElement) {
     // this set's fallback never shows a frame past a trimmed end (hf-ship: the placard), slack or not
     const inTrim = (hit: { bitmap: ImageBitmap; at: number } | null) => (hit && hit.at <= end ? hit : null)
     // the frame shown is `base` when it is decoded (the next one blends over it), else the decoded frame nearest the
-    // position: never an undecoded frame, never a blank canvas
-    const now = inTrim(close(pos.seq.nearest(pos.seq.exact(base) ? base : i), i))
+    // position: never an undecoded frame, never a blank canvas. Once the canvas holds a picture, a neighbour more than
+    // MAX_OFF frames away is not drawn: the picture holds until a frame near the scroll has decoded (PR #324 item 5)
+    let now = inTrim(close(pos.seq.nearest(pos.seq.exact(base) ? base : i), i))
+    const held = !!now && painted && Math.abs(now.at - i) > MAX_OFF
+    if (held) now = null
     // 1/16 steps: a sixteenth of a frame's change is below what the eye sees, and the stamp stays cheap to compare
     const q = Math.round(frac * 16) / 16
     const over = now && now.at === base && q > 0 ? pos.seq.exact(base + 1) : null
     let into: { bitmap: ImageBitmap; at: number } | null = null
     if (pos.next) {
-      const j = pos.next.index(0)
+      const j = pos.nextAt ?? pos.next.index(0)
       pos.next.pump(j)
-      into = fade > 0 ? close(pos.next.nearest(j), j) : null
+      const hit = fade > 0 ? pos.next.nearest(j) : null
+      into = hit && Math.abs(hit.at - j) <= MAX_OFF ? hit : null
     }
-    // nothing of this set decoded yet: -1, so the stage shows the poster rather than the last set's picture
-    if (!now && !into) return owner === pos.seq ? shown : -1
+    // nothing of this set decoded near the scroll yet: the last picture holds (-1 for another set's, so the stage keeps it)
+    if (!now && !into) {
+      if (held || !painted) settle = 2
+      return owner === pos.seq ? shown : -1
+    }
     owner = pos.seq
     const m = over ? q : 0
-    const stamp = `${pos.seq.spec.id}:${now?.at ?? -1}:${m}:${into?.at ?? -1}:${fade.toFixed(3)}`
+    // a frame that arrives after a hold blends over the held picture (the canvas keeps it) in two steps, not a pop
+    const a = settle === 2 ? 0.5 : 1
+    const stamp = `${pos.seq.spec.id}:${now?.at ?? -1}:${m}:${into?.at ?? -1}:${fade.toFixed(3)}:${settle}`
     if (stamp === last) return shown
     last = stamp
-    if (now) paint(now.bitmap, 1)
-    if (over) paint(over, m)
-    if (into) paint(into.bitmap, now ? fade : 1)
+    if (now) paint(now.bitmap, painted ? a : 1)
+    if (over) paint(over, m * (painted ? a : 1))
+    if (into) paint(into.bitmap, now || painted ? fade : 1)
+    painted = true
+    settle = settle > 0 ? settle - 1 : 0
     mix = m
     shown = (fade >= 0.5 ? into?.at : now?.at) ?? now?.at ?? into!.at
     return shown

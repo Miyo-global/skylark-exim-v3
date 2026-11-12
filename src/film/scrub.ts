@@ -47,8 +47,14 @@ const HOLD = 250
 const FAST = 30
 /** share of a segment's scroll the dip to the veil takes on each side of a chapter join */
 const DIP = 0.025
-/** share of a segment's scroll the canvas crossfade into the next chapter's frame set takes (its last XF) */
-const XF = 0.06
+/**
+ * The canvas crossfade into the next frame set (every join between two sets, inside a chapter too): the last 20-25 % of
+ * the outgoing segment, and never under 150 px of scroll at 900 px tall (16.7 vh) (PR #324 audit, item 4; was 6 %)
+ */
+const XF_MIN = 0.2
+const XF_MAX = 0.25
+const XF_VH = (150 / 900) * 100
+const xfOf = (seg: Segment) => Math.min(XF_MAX, Math.max(XF_MIN, XF_VH / Math.max(1, seg.vh)))
 const light = env.mobile || env.saveData || env.slow
 /** decoders on the stage (ScrubStage renders this many <video>s) */
 export const POOL = env.mobile ? 4 : 5
@@ -99,8 +105,8 @@ let seqCanvas: HTMLCanvasElement | null = null
 let seqStage: ReturnType<typeof createStage> | null = null
 let seqOn = false
 const seqs = new Map<string, Sequence>()
-/** 1920 bitmaps are 8.3 MB each: 16 around the frame on screen */
-const SEQ_LRU = 16
+/** decoded around the frame on screen: 24 ahead in the scroll's direction, 3 behind (sequence.ts pump; PR #324 item 5) */
+const SEQ_LRU = 28
 let avifKnown = false
 void avifReady.then(() => (avifKnown = true))
 const seqFor = (id: string) => {
@@ -339,11 +345,14 @@ function tick() {
   setShown(painted ? active : ready || seqNow ? null : shown)
   // the sequence clip on screen, and the sets coming up (fetch only); every other set gives back its bitmaps
   const nextSeg = segs[i + 1]
-  // a crossfade into the next chapter, when both sides are frame sets: the next set's entry frame fades in over this
-  // one on the canvas over the last XF of the segment (both are decoded pictures, so no blank or teal frame between)
+  // a crossfade at every join between two frame sets, inside a chapter or into the next: the next set's entry frame fades
+  // in over this one on the canvas over the last xf of the segment, tied to the scroll, so it plays the same both ways
+  // (both are decoded pictures, so no blank or teal frame between). Every other join (the docs cut) stays a cut.
   const nextClip = videoId(i + 1)
-  const crossTo =
-    seqNow && seg.join === 'crossfade' && nextSeg && nextSeg.chapter !== seg.chapter && nextClip && isSeq(nextClip) ? seqFor(nextClip) : null
+  const crossTo = seqNow && seg.join === 'crossfade' && nextSeg && nextClip && isSeq(nextClip) ? seqFor(nextClip) : null
+  const xf = xfOf(seg)
+  const nextAt = crossTo && nextSeg ? crossTo.index(seqAt(0, crossTo.spec.frames, playUntil(nextSeg), playFrom(nextSeg))) : 0
+  let fadeNow = 0
   let drawn = -1
   if (seqNow && seqStage && clip) {
     const sq = seqFor(clip)
@@ -353,11 +362,12 @@ function tick() {
       const slack = playFrom(seg) > 0 || playUntil(seg) < 1 ? 2 : undefined
       // a clip trimmed with `until` never blends in a frame past its end (hf-ship: the placard after frame 28)
       const last = playUntil(seg) < 1 ? Math.floor(seqAt(1, sq.spec.frames, playUntil(seg), playFrom(seg)) * (sq.spec.frames - 1)) : undefined
-      const fade = crossTo ? Math.max(0, (p - (1 - XF)) / XF) : 0
+      const fade = crossTo ? Math.max(0, (p - (1 - xf)) / xf) : 0
       // the next set is handed to the stage only near the join: draw() pumps it, and from the top of the chapter that
       // fetched a whole next set before the first scroll (the entry frame is decoded ahead by pumpEntry anyway)
-      const xNext = crossTo && p >= 1 - 2 * XF ? crossTo : undefined
-      drawn = seqStage.draw({ seq: sq, at, slack, last, next: xNext, fade: xNext ? fade : 0 })
+      const xNext = crossTo && p >= 1 - 2 * xf ? crossTo : undefined
+      fadeNow = xNext ? fade : 0
+      drawn = seqStage.draw({ seq: sq, at, slack, last, next: xNext, nextAt, fade: fadeNow })
       probe.target = sq.index(at) / 24
     }
   }
@@ -378,7 +388,10 @@ function tick() {
         continue
       }
       sq.prefetch()
-      if (id !== clip) up ? sq.pump(sq.spec.frames - 1) : pumpEntry(id)
+      // after the first screen the set on screen and the next one fetch fine-first around where the scroll is, or will
+      // enter (PR #324 item 5): no gap under the scroll waits behind the coarse levels of frames far off
+      sq.fine = scrolled && (id === clip || id === (up ? behind[0] : near[0]))
+      if (id !== clip) up ? sq.pump(sq.spec.frames - 1, false) : (pumpEntry(id), sq.fine && sq.pump(entryOf(id), false))
       if (!sq.complete) break
     }
   }
@@ -391,6 +404,7 @@ function tick() {
   if (seqCanvas && on) {
     seqCanvas.dataset.frame = String(drawn)
     seqCanvas.dataset.mix = String(seqStage?.mix ?? 0)
+    seqCanvas.dataset.xf = fadeNow.toFixed(3)
     seqCanvas.dataset.clip = clip ?? ''
   }
   // a decoder still on its network source moves to the warm cache's blob once that clip is cached: right away when it's
@@ -489,13 +503,16 @@ function seqAt(p: number, frames: number, until: number, from: number) {
   return Math.min(1, Math.max(0, (start + p * (end - start)) / dur))
 }
 
+/** The frame a sequence clip is entered on (a trimmed head starts past 0). */
+function entryOf(id: string) {
+  const sq = seqFor(id)
+  const seg = segs.find((s) => s.media.kind === 'video' && s.media.id === id)
+  return sq && seg ? sq.index(seqAt(0, sq.spec.frames, playUntil(seg), playFrom(seg))) : 0
+}
+
 /** Decode the frame a neighbour sequence is entered on, so a trimmed head is ready before the cut. */
 function pumpEntry(id: string) {
-  const sq = seqFor(id)
-  if (!sq) return
-  const seg = segs.find((s) => s.media.kind === 'video' && s.media.id === id)
-  if (!seg) return sq.pumpOne(0)
-  sq.pumpOne(sq.index(seqAt(0, sq.spec.frames, playUntil(seg), playFrom(seg))))
+  seqFor(id)?.pumpOne(entryOf(id))
 }
 
 function seek(s: Slot, p: number, vel: number, until = 1, from = 0) {

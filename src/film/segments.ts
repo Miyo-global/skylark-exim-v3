@@ -15,6 +15,8 @@ export interface Segment {
   scrim?: ChapterDef['scrim']
   /** the chapter's copy sits in the right-hand column (the soft scrim shades that side) */
   right?: boolean
+  /** this segment's desktop scroll length in vh (its share of the chapter's) */
+  vh: number
 }
 
 /**
@@ -25,7 +27,7 @@ export function toSegments(chapters: ChapterDef[]): Segment[] {
   return chapters.flatMap((ch, chapter) =>
     segmentBounds(ch).map(([from, to], j, all) => {
       const last = j === all.length - 1
-      return { media: ch.media[j], chapter, from, to, join: last ? ch.joinNext : ('crossfade' as const), scrim: ch.scrim, right: COPY_RIGHT.has(ch.id) }
+      return { media: ch.media[j], chapter, from, to, vh: ch.vh * (to - from), join: last ? ch.joinNext : ('crossfade' as const), scrim: ch.scrim, right: COPY_RIGHT.has(ch.id) }
     }),
   )
 }
